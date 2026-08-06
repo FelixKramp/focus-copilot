@@ -86,16 +86,18 @@ function renderDonut(today) {
   $('donutWasted').textContent = fmt(today.wasted);
 }
 
+/** Geometrie der Wochen-Balken, damit Zeichnen und Hover dieselben Zahlen nutzen. */
+const WEEK_GEOMETRY = { W: 320, H: 132, padBottom: 22, padTop: 14 };
+let lastWeekDays = [];
+
 /** Gestapelte Balken: grün unten, cyan darüber, rot oben. */
 function renderWeek(days) {
-  const W = 320;
-  const H = 132;
-  const padBottom = 22;
-  const padTop = 14;
+  const { W, H, padBottom, padTop } = WEEK_GEOMETRY;
   const usable = H - padBottom - padTop;
   const max = Math.max(60, ...days.map((d) => d.productive + d.neutral + d.wasted));
   const slot = W / days.length;
   const barW = Math.min(20, slot * 0.42);
+  lastWeekDays = days;
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
   svg += `<line x1="0" y1="${H - padBottom}" x2="${W}" y2="${H - padBottom}" class="grid-line" />`;
@@ -105,6 +107,7 @@ function renderWeek(days) {
     const x = cx - barW / 2;
     let y = H - padBottom;
 
+    svg += `<g class="bar-group" data-i="${i}">`;
     const stack = [
       { v: d.productive, c: 'var(--green)' },
       { v: d.neutral, c: 'var(--cyan)' },
@@ -121,27 +124,42 @@ function renderWeek(days) {
       svg += `<circle cx="${cx}" cy="${y - 7}" r="2.6" fill="var(--green)" style="filter:drop-shadow(0 0 4px var(--green))" />`;
     }
     svg += `<text x="${cx}" y="${H - 7}" text-anchor="middle" class="axis-label">${d.label}</text>`;
+    // Unsichtbare, großzügige Trefferfläche über die ganze Spalte — sonst
+    // müsste man exakt den schmalen Balken treffen.
+    svg += `<rect class="bar-hit" data-i="${i}" x="${slot * i}" y="0" width="${slot}" height="${H}" />`;
+    svg += '</g>';
   });
 
   svg += '</svg>';
   $('week').innerHTML = svg;
 }
 
+function weekTooltipHtml(d) {
+  const total = d.productive + d.neutral + d.wasted;
+  return `
+    <div class="tt-title">${escapeHtml(d.label)}</div>
+    <div class="tt-row"><i class="dot dot-productive"></i>Produktiv<b>${fmt(d.productive)}</b></div>
+    <div class="tt-row"><i class="dot dot-neutral"></i>Neutral<b>${fmt(d.neutral)}</b></div>
+    <div class="tt-row"><i class="dot dot-wasted"></i>Prokrastination<b>${fmt(d.wasted)}</b></div>
+    <div class="tt-total"><span>Gesamt</span><b>${fmt(total)}</b></div>
+  `;
+}
+
+const TREND_GEOMETRY = { W: 320, H: 132, padX: 8, padTop: 12, padBottom: 20 };
+let lastTrendPoints = [];
+
 function renderTrend(points) {
-  const W = 320;
-  const H = 132;
-  const padX = 8;
-  const padTop = 12;
-  const padBottom = 20;
+  const { W, H, padX, padTop, padBottom } = TREND_GEOMETRY;
   const usable = H - padTop - padBottom;
 
-  if (!points.length) { $('trend').innerHTML = ''; return; }
+  if (!points.length) { $('trend').innerHTML = ''; lastTrendPoints = []; return; }
 
   const step = points.length > 1 ? (W - padX * 2) / (points.length - 1) : 0;
   const coords = points.map((p, i) => [
     padX + step * i,
     padTop + usable * (1 - Math.min(100, Math.max(0, p.score)) / 100),
   ]);
+  lastTrendPoints = points.map((p, i) => ({ x: coords[i][0], y: coords[i][1], label: p.label, score: p.score, hasData: p.hasData }));
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
   svg += `<defs><linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
@@ -161,13 +179,25 @@ function renderTrend(points) {
   svg += `<path d="${area}" class="trend-area" />`;
   svg += `<path d="${path}" class="trend-line" />`;
   coords.forEach(([x, y], i) => {
-    if (points[i].hasData) svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" class="trend-point" />`;
+    if (points[i].hasData) {
+      svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" class="trend-point" data-i="${i}" />`;
+    }
   });
 
   svg += `<text x="0" y="${H - 5}" class="axis-label">${points[0].label}</text>`;
   svg += `<text x="${W}" y="${H - 5}" text-anchor="end" class="axis-label">${points[points.length - 1].label}</text>`;
+  // Eine breite, unsichtbare Trefferfläche über die ganze Fläche — das
+  // Auflegen auf einen 2px-Punkt wäre sonst zu fummelig.
+  svg += `<rect class="trend-hit" x="0" y="0" width="${W}" height="${H}" />`;
   svg += '</svg>';
   $('trend').innerHTML = svg;
+}
+
+function trendTooltipHtml(p) {
+  if (!p.hasData) {
+    return `<div class="tt-title">${escapeHtml(p.label)}</div><div class="tt-row">Keine Daten erfasst</div>`;
+  }
+  return `<div class="tt-title">${escapeHtml(p.label)}</div><div class="tt-row">Fokus-Score<b>${Math.round(p.score)} %</b></div>`;
 }
 
 function renderDay(hours) {
@@ -415,6 +445,98 @@ function render(s) {
   renderSites(s.domains);
   renderTicker(s);
 }
+
+/* ------------------------------------------------------------- Chart-Hover */
+
+const chartTooltip = $('chartTooltip');
+
+/** Mausposition (Client-Koordinaten) in SVG-Viewbox-Koordinaten umrechnen. */
+function clientToSvgPoint(svg, clientX, clientY) {
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return null;
+  const pt = svg.createSVGPoint();
+  pt.x = clientX;
+  pt.y = clientY;
+  return pt.matrixTransform(ctm.inverse());
+}
+
+function showTooltip(clientX, clientY, html) {
+  chartTooltip.innerHTML = html;
+  chartTooltip.hidden = false;
+
+  // Erst positionieren, nachdem die Größe feststeht, sonst rechnet man mit
+  // den Maßen vom letzten Aufruf.
+  const rect = chartTooltip.getBoundingClientRect();
+  const margin = 14;
+  let left = clientX + margin;
+  let top = clientY + margin;
+  if (left + rect.width > window.innerWidth - 8) left = clientX - rect.width - margin;
+  if (top + rect.height > window.innerHeight - 8) top = clientY - rect.height - margin;
+  chartTooltip.style.left = `${Math.max(8, left)}px`;
+  chartTooltip.style.top = `${Math.max(8, top)}px`;
+}
+
+function hideTooltip() {
+  chartTooltip.hidden = true;
+}
+
+/** Hover für "Letzte 7 Tage": Tooltip plus Abdunkeln der übrigen Tage. */
+function attachWeekHover() {
+  const container = $('week');
+  container.addEventListener('mousemove', (e) => {
+    const svg = container.querySelector('svg');
+    if (!svg || !lastWeekDays.length) return;
+    const pt = clientToSvgPoint(svg, e.clientX, e.clientY);
+    if (!pt) return;
+
+    const { W } = WEEK_GEOMETRY;
+    const slot = W / lastWeekDays.length;
+    let i = Math.floor(pt.x / slot);
+    i = Math.max(0, Math.min(lastWeekDays.length - 1, i));
+
+    for (const g of svg.querySelectorAll('.bar-group')) {
+      g.classList.toggle('is-dim', Number(g.dataset.i) !== i);
+    }
+    showTooltip(e.clientX, e.clientY, weekTooltipHtml(lastWeekDays[i]));
+  });
+  container.addEventListener('mouseleave', () => {
+    for (const g of container.querySelectorAll('.bar-group')) g.classList.remove('is-dim');
+    hideTooltip();
+  });
+}
+
+/** Hover für "Fokus-Trend": Tooltip plus vergrößerter Punkt am nächsten Tag. */
+function attachTrendHover() {
+  const container = $('trend');
+  let activeCircle = null;
+
+  container.addEventListener('mousemove', (e) => {
+    const svg = container.querySelector('svg');
+    if (!svg || !lastTrendPoints.length) return;
+    const pt = clientToSvgPoint(svg, e.clientX, e.clientY);
+    if (!pt) return;
+
+    let nearest = lastTrendPoints[0];
+    let best = Infinity;
+    for (const p of lastTrendPoints) {
+      const d = Math.abs(p.x - pt.x);
+      if (d < best) { best = d; nearest = p; }
+    }
+
+    if (activeCircle) activeCircle.setAttribute('r', '2');
+    activeCircle = svg.querySelector(`.trend-point[data-i="${lastTrendPoints.indexOf(nearest)}"]`);
+    if (activeCircle) activeCircle.setAttribute('r', '3.4');
+
+    showTooltip(e.clientX, e.clientY, trendTooltipHtml(nearest));
+  });
+  container.addEventListener('mouseleave', () => {
+    if (activeCircle) { activeCircle.setAttribute('r', '2'); activeCircle = null; }
+    hideTooltip();
+  });
+}
+
+attachWeekHover();
+attachTrendHover();
 
 /* ------------------------------------------------------- Einstufungs-Menü */
 

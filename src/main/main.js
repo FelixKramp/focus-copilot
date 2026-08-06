@@ -325,6 +325,14 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', () => createMainWindow());
 
   app.whenReady().then(() => {
+    // Als gepackte, unsignierte App landet sie ohne diesen expliziten Aufruf
+    // manchmal ohne Dock-Icon und ohne Cmd-Tab-Eintrag — kein Info.plist-Schlüssel
+    // verursacht das, es hilft nur, die Richtlinie hier aktiv zu setzen.
+    if (process.platform === 'darwin' && app.dock) {
+      app.setActivationPolicy('regular');
+      app.dock.show().catch(() => {});
+    }
+
     store = new Store(app.getPath('userData'));
     tracker = new Tracker(store);
 

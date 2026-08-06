@@ -12,6 +12,8 @@
     "test": "node scripts/smoke-test.js",
     "icons": "node scripts/make-icons.js && iconutil -c icns assets/icon.iconset -o assets/icon.icns",
     "seed": "node scripts/seed-demo.js",
+    "pack": "electron-builder --mac --dir",
+    "install-app": "bash scripts/install-app.sh",
     "dist": "electron-builder --mac"
   },
   "build": {

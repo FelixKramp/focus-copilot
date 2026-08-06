@@ -8,29 +8,43 @@ Nachbau der App aus dem Video *„Ich habe eine App mit Claude gebaut"*
 (Dominik Lebersorger). Die Haltungs-/Kamera-Funktion ist bewusst **nicht**
 enthalten — alles andere ist umgesetzt.
 
-## Schnellstart
+## Installation
 
 ```bash
 npm install
-npm start
+npm run install-app
 ```
+
+Baut die App und installiert sie nach `/Programme`. Danach läuft sie wie jedes
+andere Mac-Programm — startbar über Finder, Spotlight oder Launchpad, mit
+eigenem Icon im Dock und in der Menüleiste. Kein Terminal, kein `npm start`
+mehr nötig; das Terminal kann geschlossen werden, ohne die App zu beenden.
 
 Beim ersten Start fragt macOS nach der Berechtigung **Automation → System
 Events**. Die braucht die App, um den Namen der aktiven App und die URL des
 aktiven Browser-Tabs zu lesen. Ohne diese Freigabe läuft die Oberfläche, aber
-es werden keine Daten erfasst.
+es werden keine Daten erfasst. Freigeben unter:
+*Systemeinstellungen → Datenschutz & Sicherheit → Automation*.
 
-Freigeben unter: *Systemeinstellungen → Datenschutz & Sicherheit → Automation*.
+Für ein Update auf eine neuere Version: `npm run install-app` erneut ausführen
+— das Skript beendet eine laufende Instanz, baut neu und ersetzt die alte App.
 
-### Als echte `.app` bauen
+### Im Entwicklungsmodus starten
+
+```bash
+npm start
+```
+
+Läuft direkt aus dem Quellcode über Electron, ohne Installation — praktisch
+zum Testen von Änderungen, aber an das Terminal-Fenster gebunden.
+
+### Nur bauen, ohne zu installieren
 
 ```bash
 npm run icons     # Icons erzeugen (einmalig, macOS)
-npm run dist      # erzeugt dist/Focus Co-Pilot-1.0.0.dmg
+npm run pack       # erzeugt dist/mac-arm64/Focus Co-Pilot.app
+npm run dist        # erzeugt zusätzlich ein DMG zum Weitergeben
 ```
-
-Danach die App aus dem DMG nach `/Programme` ziehen. Sie erscheint dann mit
-eigenem Icon im Dock und in der Menüleiste — kein Terminal, kein Python.
 
 ## Was die App macht
 
@@ -69,6 +83,11 @@ und was gerade läuft. Dazu Schalter für Dashboard, Tracking pausieren und
 Beenden. Ein Klick daneben oder `Esc` schließt sie wieder.
 
 Rechtsklick auf das Icon öffnet zusätzlich das klassische Menü.
+
+**Diagramme mit Tooltip**
+"Letzte 7 Tage" und "Fokus-Trend" reagieren auf Hover: Der Zeiger holt exakte
+Werte in einem Tooltip heran (Produktiv/Neutral/Prokrastination-Aufschlüsselung
+bzw. Fokus-Score des Tages), die übrigen Balken treten dabei leicht zurück.
 
 ## Datenschutz
 

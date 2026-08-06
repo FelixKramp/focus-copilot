@@ -6,9 +6,9 @@
   --green: #4ade80;
   --red: #ff2d55;
   --idle: #64748b;
-  --text: #dceef4;
-  --muted: #5f8592;
-  --muted-dim: #3d5a65;
+  --text: #e9f6fa;
+  --muted: #8fb4c0;
+  --muted-dim: #5d818d;
   --line: rgba(45, 212, 191, 0.16);
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
@@ -69,10 +69,10 @@ body {
   color: #eafcff;
 }
 
-.head-text h1 { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; color: #cdf3fb; }
+.head-text h1 { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; color: #cdf3fb; }
 .head-text p {
   margin-top: 4px;
-  font-size: 9.5px; color: var(--muted);
+  font-size: 10.5px; color: var(--muted);
   display: flex; align-items: center; gap: 5px;
 }
 
@@ -95,10 +95,10 @@ body {
 }
 .stat label {
   display: block;
-  font-size: 7.5px; letter-spacing: 0.16em; color: var(--muted-dim);
+  font-size: 8.5px; letter-spacing: 0.12em; color: var(--muted-dim);
   margin-bottom: 4px;
 }
-.stat strong { font-family: var(--mono); font-size: 16px; font-weight: 600; color: #eafcff; }
+.stat strong { font-family: var(--mono); font-size: 17px; font-weight: 600; color: #eafcff; }
 /* Muss .stat strong überbieten, sonst bleibt alles weiß. */
 .stat strong.is-productive { color: var(--green); text-shadow: 0 0 10px rgba(74, 222, 128, 0.35); }
 .stat strong.is-wasted { color: var(--red); text-shadow: 0 0 10px rgba(255, 45, 85, 0.3); }
@@ -108,7 +108,7 @@ body {
 
 .meter-head {
   display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 9.5px; color: var(--muted); margin-bottom: 5px;
+  font-size: 10.5px; color: var(--muted); margin-bottom: 5px;
 }
 .meter-head b { font-family: var(--mono); color: var(--text); font-weight: 500; }
 
@@ -126,20 +126,20 @@ body {
 
 .row label {
   display: block;
-  font-size: 7.5px; letter-spacing: 0.16em; color: var(--muted-dim);
+  font-size: 8.5px; letter-spacing: 0.12em; color: var(--muted-dim);
   margin-bottom: 5px;
 }
 .row-body { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .row-icon { width: 15px; height: 15px; border-radius: 3px; flex: none; }
 .row-name {
   flex: 1; min-width: 0;
-  font-size: 11px; color: var(--text);
+  font-size: 12px; color: var(--text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.row-time { font-family: var(--mono); font-size: 10.5px; color: var(--muted); flex: none; }
+.row-time { font-family: var(--mono); font-size: 11.5px; color: var(--muted); flex: none; }
 
 .pill {
-  font-size: 7px; font-weight: 700; letter-spacing: 0.14em;
+  font-size: 7.5px; font-weight: 700; letter-spacing: 0.12em;
   padding: 3px 6px; border-radius: 3px;
   border: 1px solid var(--line); color: var(--muted);
   flex: none;
@@ -160,7 +160,7 @@ body {
   flex: 1;
   padding: 7px 4px;
   font-family: var(--sans);
-  font-size: 8px; font-weight: 600; letter-spacing: 0.12em;
+  font-size: 9px; font-weight: 600; letter-spacing: 0.1em;
   color: var(--muted);
   background: rgba(34, 211, 238, 0.05);
   border: 1px solid var(--line);
