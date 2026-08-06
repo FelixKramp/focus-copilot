@@ -1,0 +1,171 @@
+/* Mini-Fenster: rahmenlos, immer oben, klein genug um nicht zu stören. */
+
+:root {
+  --cyan: #22d3ee;
+  --green: #4ade80;
+  --red: #ff2d55;
+  --idle: #64748b;
+  --text: #dceef4;
+  --muted: #5f8592;
+  --muted-dim: #3d5a65;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: transparent;
+  font-family: var(--sans);
+  color: var(--text);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.mini {
+  position: relative;
+  height: 128px;
+  padding: 9px 12px 0;
+  border-radius: 12px;
+  border: 1px solid rgba(45, 212, 191, 0.28);
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(34, 211, 238, 0.12), transparent 60%),
+    rgba(5, 18, 24, 0.94);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(34, 211, 238, 0.08);
+  overflow: hidden;
+  -webkit-app-region: drag;
+}
+
+/* ------------------------------------------------------------------- Kopf */
+
+.mini-head { display: flex; align-items: center; gap: 7px; }
+
+.mark {
+  width: 9px; height: 9px;
+  border: 1px solid var(--cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 7px rgba(34, 211, 238, 0.7);
+}
+
+.mini-head h1 {
+  flex: 1;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #cdf3fb;
+}
+
+.head-actions { display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s; -webkit-app-region: no-drag; }
+.mini:hover .head-actions { opacity: 1; }
+
+.icon-btn {
+  width: 17px; height: 17px;
+  display: grid; place-items: center;
+  font-size: 11px; line-height: 1;
+  color: var(--muted);
+  background: none; border: none; border-radius: 4px;
+  cursor: pointer;
+}
+.icon-btn:hover { color: var(--cyan); background: rgba(34, 211, 238, 0.12); }
+
+/* ------------------------------------------------------------------ Körper */
+
+.mini-body { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+
+.ring { position: relative; width: 52px; height: 52px; flex: none; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: rgba(34, 211, 238, 0.12); stroke-width: 7; }
+.ring-value {
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 7;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px var(--cyan));
+  transition: stroke-dashoffset 0.6s ease;
+}
+.ring span {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-family: var(--mono);
+  font-size: 15px; font-weight: 600;
+  color: #eafcff;
+}
+
+.mini-stats { display: flex; gap: 16px; flex: 1; min-width: 0; }
+.mini-stat { min-width: 0; }
+.mini-stat label {
+  display: block;
+  font-size: 7px; letter-spacing: 0.16em;
+  color: var(--muted-dim);
+  margin-bottom: 3px;
+}
+.mini-stat strong {
+  font-family: var(--mono);
+  font-size: 15px; font-weight: 600;
+  white-space: nowrap;
+}
+.is-productive { color: var(--green); text-shadow: 0 0 10px rgba(74, 222, 128, 0.4); }
+.is-wasted { color: var(--red); text-shadow: 0 0 10px rgba(255, 45, 85, 0.35); }
+
+/* -------------------------------------------------------------------- Fuß */
+
+.mini-foot {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 9px;
+  min-width: 0;
+}
+
+.pill {
+  font-size: 7px; font-weight: 700; letter-spacing: 0.16em;
+  padding: 3px 7px;
+  border-radius: 3px;
+  border: 1px solid rgba(45, 212, 191, 0.2);
+  color: var(--muted);
+  flex: none;
+}
+.pill.is-productive { color: var(--green); border-color: rgba(74, 222, 128, 0.45); background: rgba(74, 222, 128, 0.08); }
+.pill.is-neutral { color: var(--cyan); border-color: rgba(34, 211, 238, 0.4); background: rgba(34, 211, 238, 0.07); }
+.pill.is-wasted { color: var(--red); border-color: rgba(255, 45, 85, 0.45); background: rgba(255, 45, 85, 0.08); }
+.pill.is-idle { color: var(--idle); border-color: rgba(100, 116, 139, 0.4); }
+
+.now {
+  flex: 1;
+  font-size: 9px;
+  color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.corners {
+  display: grid;
+  grid-template-columns: repeat(2, 5px);
+  gap: 2px;
+  flex: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  -webkit-app-region: no-drag;
+}
+.mini:hover .corners { opacity: 1; }
+.corners button {
+  width: 5px; height: 5px;
+  background: rgba(34, 211, 238, 0.25);
+  border: none; border-radius: 1px;
+  cursor: pointer;
+  padding: 0;
+}
+.corners button:hover, .corners button.active { background: var(--cyan); box-shadow: 0 0 5px var(--cyan); }
+
+/* Fortschrittsbalken ganz unten am Fensterrand. */
+.bar {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  background: rgba(34, 211, 238, 0.1);
+}
+.bar i {
+  display: block; height: 100%; width: 0%;
+  background: linear-gradient(90deg, #22c55e, var(--green));
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.7);
+  transition: width 0.5s ease;
+}

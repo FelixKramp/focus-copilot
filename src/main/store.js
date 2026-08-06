@@ -1,0 +1,190 @@
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Persistenz. Alles bleibt lokal in einer einzigen JSON-Datei unter
+ * ~/Library/Application Support/Focus Co-Pilot/data.json
+ *
+ * Aufbau:
+ *   days:      { "2026-08-06": DayRecord }
+ *   overrides: { "app:final cut pro": "productive", "domain:youtube.com": "wasted" }
+ *   goals:     { productiveMinutes, maxWasteMinutes }
+ *   settings:  { miniCorner, notifications, nudgeMinutes, tracking }
+ */
+
+const DEFAULT_GOALS = { productiveMinutes: 180, maxWasteMinutes: 60 };
+
+const DEFAULT_SETTINGS = {
+  miniCorner: 'bottom-right',
+  notifications: true,
+  nudgeMinutes: 10,
+  tracking: true,
+  idleThresholdSeconds: 60,
+};
+
+function emptyDay() {
+  return {
+    total: 0,
+    productive: 0,
+    neutral: 0,
+    wasted: 0,
+    inactive: 0,
+    apps: {},
+    domains: {},
+    youtube: {},
+    hours: Array.from({ length: 24 }, () => ({ p: 0, n: 0, w: 0, i: 0 })),
+  };
+}
+
+/** Lokales Datum als YYYY-MM-DD (nicht UTC — der Tag soll dem Nutzer entsprechen). */
+function dayKey(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+class Store {
+  constructor(dir) {
+    this.file = path.join(dir, 'data.json');
+    this.dir = dir;
+    this.data = {
+      days: {},
+      overrides: {},
+      goals: { ...DEFAULT_GOALS },
+      settings: { ...DEFAULT_SETTINGS },
+    };
+    this._saveTimer = null;
+    this.load();
+  }
+
+  load() {
+    try {
+      const raw = fs.readFileSync(this.file, 'utf8');
+      const parsed = JSON.parse(raw);
+      this.data = {
+        days: parsed.days || {},
+        overrides: parsed.overrides || {},
+        goals: { ...DEFAULT_GOALS, ...(parsed.goals || {}) },
+        settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) },
+      };
+      // Ältere Datensätze könnten das hours-Array noch nicht haben.
+      for (const day of Object.values(this.data.days)) {
+        if (!Array.isArray(day.hours) || day.hours.length !== 24) {
+          day.hours = Array.from({ length: 24 }, () => ({ p: 0, n: 0, w: 0, i: 0 }));
+        }
+        day.youtube = day.youtube || {};
+        day.apps = day.apps || {};
+        day.domains = day.domains || {};
+      }
+    } catch {
+      // Erster Start oder beschädigte Datei — mit Defaults weitermachen.
+    }
+  }
+
+  /** Gepufferter Schreibvorgang, damit wir nicht bei jedem Tick auf die Platte gehen. */
+  save() {
+    if (this._saveTimer) return;
+    this._saveTimer = setTimeout(() => {
+      this._saveTimer = null;
+      this.flush();
+    }, 4000);
+  }
+
+  flush() {
+    if (this._saveTimer) {
+      clearTimeout(this._saveTimer);
+      this._saveTimer = null;
+    }
+    try {
+      fs.mkdirSync(this.dir, { recursive: true });
+      const tmp = this.file + '.tmp';
+      fs.writeFileSync(tmp, JSON.stringify(this.data), 'utf8');
+      fs.renameSync(tmp, this.file); // atomar — kein halb geschriebener Stand
+    } catch (err) {
+      console.error('[store] Speichern fehlgeschlagen:', err.message);
+    }
+  }
+
+  day(key = dayKey()) {
+    if (!this.data.days[key]) this.data.days[key] = emptyDay();
+    return this.data.days[key];
+  }
+
+  /**
+   * Schreibt einen Tick in den Tagesdatensatz.
+   *
+   * @param {number} seconds   Dauer des Ticks
+   * @param {'productive'|'neutral'|'wasted'|'inactive'} category
+   * @param {{app?: string, domain?: string, youtube?: {id: string, title: string}}} ctx
+   */
+  record(seconds, category, ctx = {}) {
+    const day = this.day();
+    const hour = new Date().getHours();
+    const bucket = day.hours[hour];
+
+    if (category === 'inactive') {
+      day.inactive += seconds;
+      bucket.i += seconds;
+      this.save();
+      return;
+    }
+
+    // "total" ist die Zeit aktiv am Rechner — Inaktivität zählt bewusst nicht mit.
+    day.total += seconds;
+    if (category === 'productive') { day.productive += seconds; bucket.p += seconds; }
+    else if (category === 'wasted') { day.wasted += seconds; bucket.w += seconds; }
+    else { day.neutral += seconds; bucket.n += seconds; }
+
+    if (ctx.app) {
+      const rec = day.apps[ctx.app] || (day.apps[ctx.app] = { sec: 0, cat: category });
+      rec.sec += seconds;
+      rec.cat = category;
+    }
+    if (ctx.domain) {
+      const rec = day.domains[ctx.domain] || (day.domains[ctx.domain] = { sec: 0, cat: category });
+      rec.sec += seconds;
+      rec.cat = category;
+    }
+    if (ctx.youtube && ctx.youtube.id) {
+      const rec = day.youtube[ctx.youtube.id] || (day.youtube[ctx.youtube.id] = { sec: 0, title: '' });
+      rec.sec += seconds;
+      if (ctx.youtube.title) rec.title = ctx.youtube.title;
+    }
+
+    this.save();
+  }
+
+  setOverride(key, category) {
+    if (category === 'auto') delete this.data.overrides[key];
+    else this.data.overrides[key] = category;
+    this.flush();
+  }
+
+  setGoals(goals) {
+    this.data.goals = { ...this.data.goals, ...goals };
+    this.flush();
+  }
+
+  setSettings(settings) {
+    this.data.settings = { ...this.data.settings, ...settings };
+    this.flush();
+  }
+
+  /** Die letzten n Tage (ältester zuerst), immer inklusive heute. */
+  lastDays(n) {
+    const out = [];
+    const now = new Date();
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const key = dayKey(d);
+      out.push({ key, date: d, data: this.data.days[key] || emptyDay() });
+    }
+    return out;
+  }
+}
+
+module.exports = { Store, dayKey, emptyDay, DEFAULT_GOALS, DEFAULT_SETTINGS };

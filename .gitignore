@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+
+# Generierte Icons — mit `npm run icons` jederzeit reproduzierbar.
+assets/icon.iconset/

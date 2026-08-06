@@ -1,0 +1,42 @@
+{
+  "name": "focus-copilot",
+  "productName": "Focus Co-Pilot",
+  "version": "1.0.0",
+  "description": "Ein Fokus- und Zeit-Tracker für macOS im JARVIS-Stil. Trackt automatisch, wo deine Zeit hingeht, und teilt sie in produktiv, neutral und Zeitverschwendung.",
+  "main": "src/main/main.js",
+  "author": "Focus Co-Pilot",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node scripts/smoke-test.js",
+    "icons": "node scripts/make-icons.js && iconutil -c icns assets/icon.iconset -o assets/icon.icns",
+    "seed": "node scripts/seed-demo.js",
+    "dist": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.focuscopilot.app",
+    "productName": "Focus Co-Pilot",
+    "files": [
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "assets/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        }
+      ],
+      "extendInfo": {
+        "NSAppleEventsUsageDescription": "Focus Co-Pilot liest den Namen der aktiven App und die aktive Browser-URL, um deine Zeit zu tracken."
+      }
+    }
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^25.1.8"
+  }
+}

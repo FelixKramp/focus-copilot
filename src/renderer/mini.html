@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self';" />
+  <title>Focus Co-Pilot Mini</title>
+  <link rel="stylesheet" href="mini.css" />
+</head>
+<body>
+  <div class="mini">
+    <header class="mini-head">
+      <span class="mark" aria-hidden="true"></span>
+      <h1>FOKUS CO-PILOT</h1>
+      <div class="head-actions">
+        <button class="icon-btn" id="btnOpen" title="Dashboard öffnen">⤢</button>
+        <button class="icon-btn" id="btnClose" title="Mini-Fenster schließen">×</button>
+      </div>
+    </header>
+
+    <div class="mini-body">
+      <div class="ring">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="40" class="ring-track" />
+          <circle cx="50" cy="50" r="40" class="ring-value" id="ring" />
+        </svg>
+        <span id="score">0</span>
+      </div>
+
+      <div class="mini-stats">
+        <div class="mini-stat">
+          <label>PRODUKTIV</label>
+          <strong class="is-productive" id="productive">0 Min</strong>
+        </div>
+        <div class="mini-stat">
+          <label>VERSCHWENDET</label>
+          <strong class="is-wasted" id="wasted">0 Min</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="mini-foot">
+      <span class="pill" id="pill">NEUTRAL</span>
+      <span class="now" id="now">—</span>
+      <div class="corners" id="corners" title="Ecke wählen">
+        <button data-corner="top-left" aria-label="Oben links"></button>
+        <button data-corner="top-right" aria-label="Oben rechts"></button>
+        <button data-corner="bottom-left" aria-label="Unten links"></button>
+        <button data-corner="bottom-right" aria-label="Unten rechts"></button>
+      </div>
+    </div>
+
+    <div class="bar"><i id="goalBar"></i></div>
+  </div>
+
+  <script src="mini.js"></script>
+</body>
+</html>

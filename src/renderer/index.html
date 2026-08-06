@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data: https://i.ytimg.com https://icons.duckduckgo.com; style-src 'self' 'unsafe-inline'; script-src 'self';" />
+  <title>Focus Co-Pilot</title>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div class="brand-text">
+        <h1>FOKUS CO-PILOT</h1>
+        <p><span class="pulse" id="statusDot"></span><span id="statusText">SYSTEM ONLINE · LIVE</span></p>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <div class="datepill">
+        <span class="chev" aria-hidden="true">‹</span>
+        <span id="dateLabel">—</span>
+        <span class="chev" aria-hidden="true">›</span>
+      </div>
+      <button class="btn" id="btnToday">HEUTE</button>
+      <button class="btn" id="btnTracking" title="Tracking pausieren oder fortsetzen">PAUSE</button>
+      <button class="btn" id="btnMini">MINI</button>
+      <button class="btn btn-accent" id="btnGoals">ZIELE</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- Reihe 1 -->
+    <section class="card span-4" id="cardReactor">
+      <div class="card-head"><h2>FOKUS-REAKTOR</h2><span class="card-sub">live</span></div>
+      <div class="reactor">
+        <div class="gauge">
+          <svg viewBox="0 0 200 200" class="gauge-svg" aria-hidden="true">
+            <defs>
+              <filter id="ringGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="4" result="b" />
+                <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+            </defs>
+            <circle cx="100" cy="100" r="82" class="gauge-track" />
+            <circle cx="100" cy="100" r="82" class="gauge-value" id="gaugeValue" filter="url(#ringGlow)" />
+            <circle cx="100" cy="100" r="66" class="gauge-inner" />
+          </svg>
+          <div class="gauge-label">
+            <strong id="scoreValue">0</strong><span>%</span>
+          </div>
+        </div>
+        <ul class="legend" id="reactorLegend">
+          <li><i class="dot dot-productive"></i><span>Produktiv</span><b id="legProductive">0 Min</b></li>
+          <li><i class="dot dot-neutral"></i><span>Neutral</span><b id="legNeutral">0 Min</b></li>
+          <li><i class="dot dot-wasted"></i><span>Prokrastination</span><b id="legWasted">0 Min</b></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="card span-8" id="cardToday">
+      <div class="card-head"><h2>HEUTE</h2><span class="card-sub" id="todayHint">1 Std 0 Min / 3 Std 0 Min</span></div>
+      <div class="stat-row">
+        <div class="stat"><label>GESAMT AM MAC</label><strong id="statTotal">0 Min</strong></div>
+        <div class="stat"><label>PRODUKTIV</label><strong class="is-productive" id="statProductive">0 Min</strong></div>
+        <div class="stat"><label>PROKRASTINATION</label><strong class="is-wasted" id="statWasted">0 Min</strong></div>
+        <div class="stat"><label>NICHT AM PC</label><strong class="is-idle" id="statIdle">0 Min</strong></div>
+      </div>
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-head"><span id="goalLabel">Produktiv-Ziel 3 Std 0 Min</span><b id="goalPct">0 %</b></div>
+          <div class="bar"><i class="bar-fill bar-productive" id="goalBar" style="width:0%"></i></div>
+        </div>
+        <div class="meter">
+          <div class="meter-head"><span id="budgetLabel">Budget max 1 Std 0 Min</span><b id="budgetPct">0 %</b></div>
+          <div class="bar"><i class="bar-fill bar-wasted" id="budgetBar" style="width:0%"></i></div>
+        </div>
+      </div>
+      <p class="card-note" id="streakNote">Erreiche das Produktiv-Ziel, um eine Serie zu starten.</p>
+    </section>
+
+    <!-- Reihe 2 -->
+    <section class="card span-4">
+      <div class="card-head"><h2>VERTEILUNG</h2><span class="card-sub">heute</span></div>
+      <div class="reactor reactor--compact">
+        <div class="gauge gauge--sm">
+          <svg viewBox="0 0 200 200" class="gauge-svg" id="donutSvg" aria-hidden="true">
+            <circle cx="100" cy="100" r="78" class="gauge-track" />
+            <g id="donutArcs"></g>
+          </svg>
+          <div class="gauge-label"><strong id="donutTotal">0</strong><span>Min</span></div>
+        </div>
+        <ul class="legend legend--sm">
+          <li><i class="dot dot-productive"></i><span>Produktiv</span><b id="donutProductive">0 Min</b></li>
+          <li><i class="dot dot-neutral"></i><span>Neutral</span><b id="donutNeutral">0 Min</b></li>
+          <li><i class="dot dot-wasted"></i><span>Prokrastination</span><b id="donutWasted">0 Min</b></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="card span-4">
+      <div class="card-head"><h2>LETZTE 7 TAGE</h2><span class="card-sub">Punkt = Ziel erreicht</span></div>
+      <div class="chart chart--bars" id="week"></div>
+    </section>
+
+    <section class="card span-4">
+      <div class="card-head"><h2>FOKUS-TREND</h2><span class="card-sub">letzte 14 Tage</span></div>
+      <div class="chart chart--trend" id="trend"></div>
+    </section>
+
+    <!-- Aktueller Kontext -->
+    <section class="card span-12 strip" id="currentStrip">
+      <div class="strip-left">
+        <span class="strip-mark" aria-hidden="true"></span>
+        <img class="strip-icon" id="currentIcon" alt="" hidden />
+        <span id="currentName">Warte auf Aktivität …</span>
+      </div>
+      <span class="pill" id="currentPill">NEUTRAL</span>
+    </section>
+
+    <!-- Hochrechnung -->
+    <section class="card span-12">
+      <div class="card-head">
+        <h2>HOCHRECHNUNG</h2>
+        <span class="card-sub">Prokrastination, linear auf dein Tempo gerechnet</span>
+      </div>
+      <div class="projection" id="projection">
+        <div class="proj"><label>PRO TAG</label><strong id="projDay">0 Min</strong></div>
+        <div class="proj"><label>PRO WOCHE</label><strong id="projWeek">0 Min</strong></div>
+        <div class="proj"><label>PRO MONAT</label><strong id="projMonth">0 Std</strong></div>
+        <div class="proj"><label>PRO JAHR</label><strong id="projYear">0 Std</strong></div>
+        <div class="proj proj--loud"><label>PRO JAHRZEHNT</label><strong id="projDecade">0 Tage</strong></div>
+      </div>
+      <p class="card-note" id="projNote">Noch keine Prokrastination erfasst. Weiter so.</p>
+    </section>
+
+    <!-- Tagesverlauf -->
+    <section class="card span-12">
+      <div class="card-head">
+        <h2>TAGESVERLAUF</h2>
+        <div class="chart-legend">
+          <span><i class="dot dot-productive"></i>PRODUKTIV</span>
+          <span><i class="dot dot-neutral"></i>NEUTRAL</span>
+          <span><i class="dot dot-wasted"></i>PROKRASTINATION</span>
+          <span><i class="dot dot-idle"></i>NICHT AM PC</span>
+        </div>
+      </div>
+      <div class="chart chart--day" id="day"></div>
+    </section>
+
+    <!-- Ranglisten -->
+    <section class="card span-4">
+      <div class="card-head"><h2>APPS</h2><span class="card-sub">heute pro Anwendung</span></div>
+      <ul class="ranklist" id="listApps"></ul>
+    </section>
+
+    <section class="card span-4">
+      <div class="card-head"><h2>YOUTUBE</h2><span class="card-sub" id="ytSub">heute geschaut</span></div>
+      <ul class="ranklist ranklist--video" id="listYoutube"></ul>
+    </section>
+
+    <section class="card span-4">
+      <div class="card-head"><h2>WEBSITES</h2><span class="card-sub">heute im Browser</span></div>
+      <ul class="ranklist" id="listSites"></ul>
+    </section>
+  </main>
+
+  <footer class="ticker">
+    <div class="ticker-track" id="tickerText">ALLE DATEN BLEIBEN LOKAL</div>
+  </footer>
+
+  <!-- Ziele-Dialog -->
+  <div class="overlay" id="goalsOverlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="goalsTitle">
+      <div class="card-head"><h2 id="goalsTitle">ZIELE KALIBRIEREN</h2></div>
+      <p class="modal-intro">
+        Setz dir gute Werte: dein Produktiv-Ziel pro Tag und dein maximales
+        Prokrastinations-Budget. Alles darunter wird live hochgerechnet.
+      </p>
+
+      <div class="presets">
+        <button class="preset" data-productive="120" data-waste="90">EINSTEIGER · 2 STD / 90 MIN</button>
+        <button class="preset" data-productive="240" data-waste="45">CREATOR · 4 STD / 45 MIN</button>
+        <button class="preset" data-productive="360" data-waste="20">MASCHINE · 6 STD / 20 MIN</button>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-head"><span>Produktiv-Ziel pro Tag</span><b id="goalOut">3 Std 0 Min</b></div>
+        <input type="range" id="goalRange" min="30" max="720" step="15" value="180" />
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-head"><span>Max. Prokrastination pro Tag</span><b class="is-wasted" id="wasteOut">60 Min</b></div>
+        <input type="range" id="wasteRange" min="0" max="300" step="5" value="60" />
+      </div>
+
+      <table class="proj-table">
+        <thead>
+          <tr><th></th><th>PRODUKTIV-ZIEL</th><th>MAX. PROKRASTINATION</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>PRO WOCHE</td><td id="tWeekG">—</td><td class="is-wasted" id="tWeekW">—</td></tr>
+          <tr><td>PRO MONAT</td><td id="tMonthG">—</td><td class="is-wasted" id="tMonthW">—</td></tr>
+          <tr><td>PRO JAHR</td><td id="tYearG">—</td><td class="is-wasted" id="tYearW">—</td></tr>
+        </tbody>
+      </table>
+
+      <p class="card-note" id="goalsNote"></p>
+
+      <div class="modal-actions">
+        <button class="btn" id="goalsCancel">ABBRECHEN</button>
+        <button class="btn btn-accent" id="goalsSave">SPEICHERN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Einstufungs-Menü -->
+  <div class="ctx" id="ctxMenu" hidden>
+    <p class="ctx-title" id="ctxTitle">Wie zählt das?</p>
+    <button data-cat="productive"><i class="dot dot-productive"></i>PRODUKTIV</button>
+    <button data-cat="neutral"><i class="dot dot-neutral"></i>NEUTRAL</button>
+    <button data-cat="wasted"><i class="dot dot-wasted"></i>ZEITVERSCHWENDUNG</button>
+    <button data-cat="auto" class="ctx-auto">AUTOMATISCH EINSTUFEN</button>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
