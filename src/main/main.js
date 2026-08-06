@@ -19,7 +19,7 @@ const PRELOAD = path.join(__dirname, '..', 'preload', 'preload.js');
 let store = null;
 let tracker = null;
 let mainWindow = null;
-let miniWindow = null;
+let panelWindow = null;
 let tray = null;
 let quitting = false;
 
@@ -79,39 +79,48 @@ function createMainWindow() {
   return mainWindow;
 }
 
-/** Positioniert das Mini-Fenster in der gewählten Bildschirmecke. */
-function positionMini(win, corner) {
-  const { workArea } = screen.getPrimaryDisplay();
-  const [w, h] = win.getSize();
-  const margin = 16;
-  const positions = {
-    'top-left': [workArea.x + margin, workArea.y + margin],
-    'top-right': [workArea.x + workArea.width - w - margin, workArea.y + margin],
-    'bottom-left': [workArea.x + margin, workArea.y + workArea.height - h - margin],
-    'bottom-right': [
-      workArea.x + workArea.width - w - margin,
-      workArea.y + workArea.height - h - margin,
-    ],
-  };
-  const [x, y] = positions[corner] || positions['bottom-right'];
-  win.setPosition(Math.round(x), Math.round(y), false);
+/* ------------------------------------------------ Vorschau am Menüleisten-Icon */
+
+const PANEL_WIDTH = 312;
+const PANEL_HEIGHT = 392;
+
+/**
+ * Setzt die Vorschau mittig unter das Menüleisten-Icon. Ist das Icon so weit
+ * am Rand, dass das Panel überstehen würde, rückt es nach innen; die Spitze
+ * wandert dann entsprechend mit.
+ */
+function positionPanel() {
+  if (!panelWindow || !tray) return;
+  const iconBounds = tray.getBounds();
+  const display = screen.getDisplayNearestPoint({ x: iconBounds.x, y: iconBounds.y });
+  const { workArea } = display;
+
+  const iconCenterX = iconBounds.x + iconBounds.width / 2;
+  const margin = 6;
+  let x = Math.round(iconCenterX - PANEL_WIDTH / 2);
+  x = Math.max(workArea.x + margin, Math.min(x, workArea.x + workArea.width - PANEL_WIDTH - margin));
+  const y = Math.round(iconBounds.y + iconBounds.height);
+
+  panelWindow.setPosition(x, y, false);
+
+  // Die Spitze soll weiterhin auf das Icon zeigen, auch wenn das Panel
+  // seitlich verschoben wurde.
+  const notchLeft = Math.round(iconCenterX - x);
+  panelWindow.webContents.send('panel:notch', notchLeft);
 }
 
-function createMiniWindow() {
-  if (miniWindow) {
-    miniWindow.show();
-    return miniWindow;
-  }
+function createPanelWindow() {
+  if (panelWindow) return panelWindow;
 
-  miniWindow = new BrowserWindow({
-    width: 296,
-    height: 128,
+  panelWindow = new BrowserWindow({
+    width: PANEL_WIDTH,
+    height: PANEL_HEIGHT,
     show: false,
     frame: false,
     transparent: true,
     hasShadow: false,
     resizable: false,
-    movable: true,
+    movable: false,
     skipTaskbar: true,
     alwaysOnTop: true,
     fullscreenable: false,
@@ -123,27 +132,31 @@ function createMiniWindow() {
     },
   });
 
-  // Über Vollbild-Apps und auf allen Schreibtischen sichtbar bleiben.
-  miniWindow.setAlwaysOnTop(true, 'floating');
-  miniWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  panelWindow.setAlwaysOnTop(true, 'pop-up-menu');
+  panelWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  panelWindow.loadFile(path.join(RENDERER, 'panel.html'));
 
-  miniWindow.loadFile(path.join(RENDERER, 'mini.html'));
-  miniWindow.once('ready-to-show', () => {
-    positionMini(miniWindow, store.data.settings.miniCorner);
-    miniWindow.show();
-  });
-  miniWindow.on('closed', () => { miniWindow = null; });
-  return miniWindow;
+  // Klick daneben schließt die Vorschau — so verhält sich ein Menüleisten-Fenster.
+  panelWindow.on('blur', () => hidePanel());
+
+  return panelWindow;
 }
 
-function toggleMini() {
-  if (miniWindow) {
-    miniWindow.close();
-    miniWindow = null;
-  } else {
-    createMiniWindow();
-  }
-  rebuildTrayMenu();
+function showPanel() {
+  createPanelWindow();
+  pushSnapshot();
+  positionPanel();
+  panelWindow.show();
+  panelWindow.focus();
+}
+
+function hidePanel() {
+  if (panelWindow && panelWindow.isVisible()) panelWindow.hide();
+}
+
+function togglePanel() {
+  if (panelWindow && panelWindow.isVisible()) hidePanel();
+  else showPanel();
 }
 
 /* -------------------------------------------------------------- Menüleiste */
@@ -164,41 +177,41 @@ function formatShort(seconds) {
   return `${Math.floor(m / 60)}h ${m % 60}m`;
 }
 
-function rebuildTrayMenu() {
-  if (!tray) return;
-  const day = store.day();
+/** Klassisches Menü auf Rechtsklick — die Vorschau liegt auf dem Linksklick. */
+function trayContextMenu() {
   const running = tracker.running;
-
-  const menu = Menu.buildFromTemplate([
-    { label: `Produktiv heute: ${formatShort(day.productive)}`, enabled: false },
-    { label: `Prokrastination: ${formatShort(day.wasted)}`, enabled: false },
-    { type: 'separator' },
+  return Menu.buildFromTemplate([
     { label: 'Dashboard öffnen', click: () => createMainWindow() },
-    {
-      label: miniWindow ? 'Mini-Fenster ausblenden' : 'Mini-Fenster anzeigen',
-      click: () => toggleMini(),
-    },
     { type: 'separator' },
     {
       label: running ? 'Tracking pausieren' : 'Tracking fortsetzen',
       click: () => {
         if (tracker.running) tracker.stop(); else tracker.start();
-        rebuildTrayMenu();
+        refreshTray();
         pushSnapshot();
       },
     },
     { type: 'separator' },
     { label: 'Focus Co-Pilot beenden', click: () => { quitting = true; app.quit(); } },
   ]);
+}
 
-  tray.setContextMenu(menu);
-  tray.setToolTip(`Focus Co-Pilot — ${formatShort(day.productive)} produktiv`);
+function refreshTray() {
+  if (!tray) return;
+  const day = store.day();
+  tray.setToolTip(
+    `Focus Co-Pilot — ${formatShort(day.productive)} produktiv, ` +
+    `${formatShort(day.wasted)} Prokrastination`
+  );
 }
 
 function createTray() {
   tray = new Tray(trayImage());
-  tray.on('click', () => rebuildTrayMenu());
-  rebuildTrayMenu();
+  // Kein setContextMenu: sonst würde macOS den Linksklick abfangen und
+  // die Vorschau käme nie zum Zug.
+  tray.on('click', () => togglePanel());
+  tray.on('right-click', () => tray.popUpContextMenu(trayContextMenu()));
+  refreshTray();
 }
 
 /* --------------------------------------------------------- App-Icons lesen */
@@ -283,30 +296,23 @@ function registerIpc() {
 
   ipcMain.handle('settings:set', (_e, settings) => {
     store.setSettings(settings);
-    if (miniWindow && settings.miniCorner) {
-      positionMini(miniWindow, settings.miniCorner);
-    }
     return buildSnapshot(store, tracker);
   });
 
   ipcMain.handle('tracking:toggle', () => {
     if (tracker.running) tracker.stop(); else tracker.start();
-    rebuildTrayMenu();
+    refreshTray();
     return buildSnapshot(store, tracker);
   });
 
-  ipcMain.handle('mini:toggle', () => { toggleMini(); return true; });
-  ipcMain.handle('mini:close', () => {
-    if (miniWindow) { miniWindow.close(); miniWindow = null; rebuildTrayMenu(); }
-    return true;
-  });
-  ipcMain.handle('mini:corner', (_e, corner) => {
-    store.setSettings({ miniCorner: corner });
-    if (miniWindow) positionMini(miniWindow, corner);
-    return true;
-  });
+  ipcMain.handle('panel:close', () => { hidePanel(); return true; });
+  ipcMain.handle('app:quit', () => { quitting = true; app.quit(); return true; });
 
-  ipcMain.handle('dashboard:open', () => { createMainWindow(); return true; });
+  ipcMain.handle('dashboard:open', () => {
+    hidePanel(); // die Vorschau hat ihren Zweck erfüllt
+    createMainWindow();
+    return true;
+  });
   ipcMain.handle('icon:app', (_e, appName) => getAppIconDataUrl(appName));
   ipcMain.handle('link:open', (_e, url) => { shell.openExternal(url); return true; });
 }
@@ -329,11 +335,11 @@ if (!app.requestSingleInstanceLock()) {
     let lastTrayRefresh = 0;
     tracker.on('update', () => {
       pushSnapshot();
-      // Das Tray-Menü nur etwa einmal pro Minute neu bauen.
+      // Den Tooltip nur etwa einmal pro Minute neu setzen.
       const now = Date.now();
       if (now - lastTrayRefresh > 60000) {
         lastTrayRefresh = now;
-        rebuildTrayMenu();
+        refreshTray();
       }
     });
 
@@ -345,7 +351,7 @@ if (!app.requestSingleInstanceLock()) {
     });
 
     if (store.data.settings.tracking) tracker.start();
-    if (store.data.settings.miniVisible) createMiniWindow();
+    createPanelWindow(); // im Hintergrund vorbereiten, damit sie sofort aufgeht
 
     // Nach dem Aufwachen kurz durchatmen, dann sofort neu messen.
     powerMonitor.on('resume', () => { if (tracker.running) tracker.tick(); });
@@ -360,9 +366,6 @@ if (!app.requestSingleInstanceLock()) {
   app.on('before-quit', () => {
     quitting = true;
     if (tracker) tracker.stop();
-    if (store) {
-      store.setSettings({ miniVisible: Boolean(miniWindow) });
-      store.flush();
-    }
+    if (store) store.flush();
   });
 }

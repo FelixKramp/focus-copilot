@@ -19,10 +19,16 @@ contextBridge.exposeInMainWorld('copilot', {
   setSettings: (settings) => ipcRenderer.invoke('settings:set', settings),
   toggleTracking: () => ipcRenderer.invoke('tracking:toggle'),
 
-  toggleMini: () => ipcRenderer.invoke('mini:toggle'),
-  closeMini: () => ipcRenderer.invoke('mini:close'),
-  setMiniCorner: (corner) => ipcRenderer.invoke('mini:corner', corner),
+  closePanel: () => ipcRenderer.invoke('panel:close'),
+  quitApp: () => ipcRenderer.invoke('app:quit'),
   openDashboard: () => ipcRenderer.invoke('dashboard:open'),
+
+  /** Verschiebt die Spitze der Vorschau, damit sie aufs Icon zeigt. */
+  onNotch: (handler) => {
+    const listener = (_event, left) => handler(left);
+    ipcRenderer.on('panel:notch', listener);
+    return () => ipcRenderer.removeListener('panel:notch', listener);
+  },
 
   getAppIcon: (appName) => ipcRenderer.invoke('icon:app', appName),
   openLink: (url) => ipcRenderer.invoke('link:open', url),

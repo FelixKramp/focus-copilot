@@ -25,7 +25,7 @@ class Tracker extends EventEmitter {
     this.timer = null;
     this.busy = false;
 
-    /** Aktueller Zustand für Mini-Fenster und Kopfzeile. */
+    /** Aktueller Zustand für Vorschau und Kopfzeile. */
     this.current = { app: '', title: '', domain: '', category: 'neutral', idle: false };
 
     /** Zusammenhängende Prokrastinations-Sekunden (für die Push-Nachricht). */
@@ -70,7 +70,8 @@ class Tracker extends EventEmitter {
 
     // Dock, Kontrollzentrum & Co. übernehmen kurz den Vordergrund — das ist
     // keine Nutzung, also lassen wir den Tick einfach fallen.
-    if (isIgnoredProcess(front.app) && idleSeconds < settings.idleThresholdSeconds) return;
+    const ignored = isIgnoredProcess(front.app);
+    if (ignored && idleSeconds < settings.idleThresholdSeconds) return;
 
     const domain = domainFromUrl(front.url);
     const isBrowser = BROWSER_SET.has(String(front.app).toLowerCase());
@@ -81,17 +82,26 @@ class Tracker extends EventEmitter {
       // Läuft trotz Untätigkeit ein Video? Dann ist es Prokrastination.
       const media = await isMediaPlaying();
       if (media) {
-        const { category } = classify({ app: front.app, domain: ctxDomain }, this.store.data.overrides);
+        // Steht zufällig ein Hilfsprozess vorne, zählt die Zeit trotzdem als
+        // Prokrastination — nur eben ohne sie diesem Prozess zuzuschreiben,
+        // sonst landet er in den Ranglisten.
+        const attributed = ignored ? { app: '', title: '', url: '' } : front;
+        const { category } = classify(
+          { app: attributed.app, domain: ctxDomain }, this.store.data.overrides
+        );
         // Ein laufendes Video ohne Interaktion ist Prokrastination — auch wenn
         // die Domain sonst als produktiv gelten würde.
         const effective = category === 'productive' ? 'productive' : 'wasted';
-        this.commit(effective, front, ctxDomain, { idle: false, media: true });
+        this.commit(effective, attributed, ctxDomain, { idle: false, media: true });
         return;
       }
       this.store.record(TICK_SECONDS, 'inactive');
       this.current = {
-        app: front.app, title: front.title, domain: ctxDomain,
-        category: 'inactive', idle: true,
+        app: ignored ? '' : front.app,
+        title: ignored ? '' : front.title,
+        domain: ctxDomain,
+        category: 'inactive',
+        idle: true,
       };
       this.wasteStreakSeconds = 0;
       this.emit('update');

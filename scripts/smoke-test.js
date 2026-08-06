@@ -75,6 +75,17 @@ check('Hintergrund-Hilfsprozesse werden ignoriert', () => {
   assert.strictEqual(isIgnoredProcess('Finder'), false, 'Finder ist echte Nutzung');
 });
 
+check('Ohne App-Namen wird keine App-Zeile angelegt', () => {
+  // So verbucht der Tracker Medienzeit, wenn vorne nur ein Hilfsprozess steht:
+  // Die Zeit zählt, landet aber in keiner Rangliste.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-anon-'));
+  const s = new Store(dir);
+  s.record(30, 'wasted', { app: undefined, domain: undefined });
+  assert.strictEqual(s.day().wasted, 30, 'Zeit muss trotzdem zählen');
+  assert.deepStrictEqual(s.day().apps, {}, 'aber ohne App-Eintrag');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 check('Der Override-Schlüssel passt zum UI-Format', () => {
   assert.strictEqual(classify({ app: 'Final Cut Pro' }).key, 'app:final cut pro');
   assert.strictEqual(classify({ app: 'Safari', domain: 'youtube.com' }).key, 'domain:youtube.com');

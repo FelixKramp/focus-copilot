@@ -3,7 +3,7 @@
 const { dayKey } = require('./store');
 
 /**
- * Baut den kompletten Snapshot, den Dashboard und Mini-Fenster rendern.
+ * Baut den kompletten Snapshot, den Dashboard und Menüleisten-Vorschau rendern.
  * Die gesamte Rechnerei passiert hier im Main-Prozess, damit der Renderer
  * reines Zeichnen bleibt.
  */

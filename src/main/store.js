@@ -11,13 +11,12 @@ const path = require('path');
  *   days:      { "2026-08-06": DayRecord }
  *   overrides: { "app:final cut pro": "productive", "domain:youtube.com": "wasted" }
  *   goals:     { productiveMinutes, maxWasteMinutes }
- *   settings:  { miniCorner, notifications, nudgeMinutes, tracking }
+ *   settings:  { notifications, nudgeMinutes, tracking, idleThresholdSeconds }
  */
 
 const DEFAULT_GOALS = { productiveMinutes: 180, maxWasteMinutes: 60 };
 
 const DEFAULT_SETTINGS = {
-  miniCorner: 'bottom-right',
   notifications: true,
   nudgeMinutes: 10,
   tracking: true,

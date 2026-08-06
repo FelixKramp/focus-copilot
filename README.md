@@ -61,14 +61,14 @@ Tempo pro Woche, Monat, Jahr und Jahrzehnt bedeutet — in vollen Tagen.
 Nach 10 zusammenhängenden Minuten Prokrastination kommt eine Meldung, in
 wechselnden Formulierungen. Beim Erreichen des Tagesziels ebenfalls.
 
-**Mini-Fenster**
-Kleines Fenster, das immer oben bleibt und über allen Vollbild-Apps sichtbar
-ist. Zeigt Fokus-Score, produktive und verschwendete Zeit. Die Ecke lässt sich
-über die vier Punkte unten rechts wählen.
+**Menüleisten-Vorschau**
+Ein Klick auf das Icon in der Menüleiste klappt direkt darunter eine Vorschau
+auf: Fokus-Score, Gesamtzeit am Mac, produktive Zeit, Prokrastination, Zeit
+nicht am PC, der Fortschritt zum Tagesziel, die meistgenutzte App des Tages
+und was gerade läuft. Dazu Schalter für Dashboard, Tracking pausieren und
+Beenden. Ein Klick daneben oder `Esc` schließt sie wieder.
 
-**Menüleiste**
-Icon mit Tagesüberblick, Dashboard öffnen, Mini-Fenster ein-/ausblenden und
-Tracking pausieren.
+Rechtsklick auf das Icon öffnet zusätzlich das klassische Menü.
 
 ## Datenschutz
 
@@ -101,7 +101,7 @@ damit man die Diagramme gefüllt sieht, ohne die echten Daten anzufassen.
 | `src/main/classify.js` | Automatische Einstufung von Apps und Domains |
 | `src/main/store.js` | Persistenz (eine JSON-Datei, atomar geschrieben) |
 | `src/main/stats.js` | Alle Kennzahlen für die Oberfläche |
-| `src/renderer/` | Dashboard und Mini-Fenster (kein Framework, SVG von Hand) |
+| `src/renderer/` | Dashboard und Menüleisten-Vorschau (kein Framework, SVG von Hand) |
 
 ## Lizenz
 

@@ -371,9 +371,13 @@ function render(s) {
 
   // Aktueller Kontext
   const cur = s.current || {};
-  const label = cur.idle
-    ? 'Nicht am PC'
-    : (cur.domain || cur.app || 'Warte auf Aktivität …');
+  // Bei laufendem Video ohne Interaktion steht vorne oft kein sinnvoller
+  // Prozess — dann benennen wir das, statt eine leere Zeile zu zeigen.
+  let label;
+  if (cur.idle) label = 'Nicht am PC';
+  else if (cur.domain || cur.app) label = cur.domain || cur.app;
+  else if (cur.media) label = 'Video läuft im Hintergrund';
+  else label = 'Warte auf Aktivität …';
   $('currentName').textContent = label;
   const pill = $('currentPill');
   const cat = cur.idle ? 'inactive' : (cur.category || 'neutral');
@@ -521,7 +525,6 @@ document.addEventListener('keydown', (e) => {
 
 /* ----------------------------------------------------------------- Buttons */
 
-$('btnMini').addEventListener('click', () => window.copilot.toggleMini());
 $('btnToday').addEventListener('click', async () => render(await window.copilot.getSnapshot()));
 $('btnTracking').addEventListener('click', async () => render(await window.copilot.toggleTracking()));
 

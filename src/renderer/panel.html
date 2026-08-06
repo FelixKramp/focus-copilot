@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self';" />
+  <title>Focus Co-Pilot</title>
+  <link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+  <div class="panel">
+    <span class="notch" aria-hidden="true"></span>
+
+    <header class="head">
+      <div class="ring">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="40" class="ring-track" />
+          <circle cx="50" cy="50" r="40" class="ring-value" id="ring" />
+        </svg>
+        <span id="score">0</span>
+      </div>
+      <div class="head-text">
+        <h1>FOKUS CO-PILOT</h1>
+        <p><i class="pulse" id="statusDot"></i><span id="statusText">System online</span></p>
+      </div>
+    </header>
+
+    <div class="stats">
+      <div class="stat">
+        <label>GESAMT AM MAC</label>
+        <strong id="total">0 Min</strong>
+      </div>
+      <div class="stat">
+        <label>PRODUKTIV</label>
+        <strong class="is-productive" id="productive">0 Min</strong>
+      </div>
+      <div class="stat">
+        <label>PROKRASTINATION</label>
+        <strong class="is-wasted" id="wasted">0 Min</strong>
+      </div>
+      <div class="stat">
+        <label>NICHT AM PC</label>
+        <strong class="is-idle" id="idle">0 Min</strong>
+      </div>
+    </div>
+
+    <div class="meter">
+      <div class="meter-head">
+        <span id="goalLabel">Produktiv-Ziel</span>
+        <b id="goalPct">0 %</b>
+      </div>
+      <div class="bar"><i id="goalBar"></i></div>
+    </div>
+
+    <div class="rows">
+      <div class="row">
+        <label>MEISTGENUTZT</label>
+        <div class="row-body">
+          <img class="row-icon" id="topIcon" alt="" hidden />
+          <span class="row-name" id="topApp">—</span>
+          <span class="row-time" id="topTime"></span>
+        </div>
+      </div>
+      <div class="row">
+        <label>GERADE</label>
+        <div class="row-body">
+          <span class="row-name" id="currentName">—</span>
+          <span class="pill" id="currentPill">NEUTRAL</span>
+        </div>
+      </div>
+    </div>
+
+    <footer class="actions">
+      <button id="btnDashboard">DASHBOARD</button>
+      <button id="btnTracking">PAUSE</button>
+      <button id="btnQuit" class="quit">BEENDEN</button>
+    </footer>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+</html>

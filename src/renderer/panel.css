@@ -1,0 +1,172 @@
+/* Vorschau, die unter dem Menüleisten-Icon aufklappt.
+   Bewusst deckend und ohne backdrop-filter — siehe Kommentar in dashboard.css. */
+
+:root {
+  --cyan: #22d3ee;
+  --green: #4ade80;
+  --red: #ff2d55;
+  --idle: #64748b;
+  --text: #dceef4;
+  --muted: #5f8592;
+  --muted-dim: #3d5a65;
+  --line: rgba(45, 212, 191, 0.16);
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: transparent;
+  font-family: var(--sans);
+  color: var(--text);
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.panel {
+  position: relative;
+  margin: 9px 8px 8px;
+  padding: 14px 14px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(45, 212, 191, 0.24);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(34, 211, 238, 0.10), transparent 62%),
+    #06141a;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.62);
+}
+
+/* Kleine Spitze, die zum Menüleisten-Icon zeigt. */
+.notch {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 11px; height: 11px;
+  margin-left: -5.5px;
+  background: #06141a;
+  border-left: 1px solid rgba(45, 212, 191, 0.24);
+  border-top: 1px solid rgba(45, 212, 191, 0.24);
+  transform: rotate(45deg);
+}
+
+/* ------------------------------------------------------------------- Kopf */
+
+.head { display: flex; align-items: center; gap: 11px; }
+
+.ring { position: relative; width: 44px; height: 44px; flex: none; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: rgba(34, 211, 238, 0.13); stroke-width: 8; }
+.ring-value {
+  fill: none; stroke: var(--cyan); stroke-width: 8; stroke-linecap: round;
+  filter: drop-shadow(0 0 4px var(--cyan));
+  transition: stroke-dashoffset 0.5s ease;
+}
+.ring span {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-family: var(--mono); font-size: 13px; font-weight: 600;
+  color: #eafcff;
+}
+
+.head-text h1 { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; color: #cdf3fb; }
+.head-text p {
+  margin-top: 4px;
+  font-size: 9.5px; color: var(--muted);
+  display: flex; align-items: center; gap: 5px;
+}
+
+.pulse {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 6px var(--green);
+}
+.pulse.is-paused { background: var(--idle); box-shadow: none; }
+
+/* ------------------------------------------------------------------ Zahlen */
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  margin: 14px 0 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.stat label {
+  display: block;
+  font-size: 7.5px; letter-spacing: 0.16em; color: var(--muted-dim);
+  margin-bottom: 4px;
+}
+.stat strong { font-family: var(--mono); font-size: 16px; font-weight: 600; color: #eafcff; }
+/* Muss .stat strong überbieten, sonst bleibt alles weiß. */
+.stat strong.is-productive { color: var(--green); text-shadow: 0 0 10px rgba(74, 222, 128, 0.35); }
+.stat strong.is-wasted { color: var(--red); text-shadow: 0 0 10px rgba(255, 45, 85, 0.3); }
+.stat strong.is-idle { color: var(--idle); }
+
+/* ------------------------------------------------------------ Zielbalken */
+
+.meter-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 9.5px; color: var(--muted); margin-bottom: 5px;
+}
+.meter-head b { font-family: var(--mono); color: var(--text); font-weight: 500; }
+
+.bar { height: 3px; background: rgba(34, 211, 238, 0.1); border-radius: 2px; overflow: hidden; }
+.bar i {
+  display: block; height: 100%; width: 0%;
+  background: linear-gradient(90deg, #22c55e, var(--green));
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+  transition: width 0.5s ease;
+}
+
+/* -------------------------------------------------------------- Zeilen */
+
+.rows { margin: 13px 0 14px; display: flex; flex-direction: column; gap: 11px; }
+
+.row label {
+  display: block;
+  font-size: 7.5px; letter-spacing: 0.16em; color: var(--muted-dim);
+  margin-bottom: 5px;
+}
+.row-body { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.row-icon { width: 15px; height: 15px; border-radius: 3px; flex: none; }
+.row-name {
+  flex: 1; min-width: 0;
+  font-size: 11px; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.row-time { font-family: var(--mono); font-size: 10.5px; color: var(--muted); flex: none; }
+
+.pill {
+  font-size: 7px; font-weight: 700; letter-spacing: 0.14em;
+  padding: 3px 6px; border-radius: 3px;
+  border: 1px solid var(--line); color: var(--muted);
+  flex: none;
+}
+.pill.is-productive { color: var(--green); border-color: rgba(74, 222, 128, 0.42); background: rgba(74, 222, 128, 0.08); }
+.pill.is-neutral { color: var(--cyan); border-color: rgba(34, 211, 238, 0.38); background: rgba(34, 211, 238, 0.07); }
+.pill.is-wasted { color: var(--red); border-color: rgba(255, 45, 85, 0.42); background: rgba(255, 45, 85, 0.08); }
+.pill.is-idle { color: var(--idle); border-color: rgba(100, 116, 139, 0.38); }
+
+/* ------------------------------------------------------------- Schalter */
+
+.actions {
+  display: flex; gap: 6px;
+  padding-top: 11px;
+  border-top: 1px solid var(--line);
+}
+.actions button {
+  flex: 1;
+  padding: 7px 4px;
+  font-family: var(--sans);
+  font-size: 8px; font-weight: 600; letter-spacing: 0.12em;
+  color: var(--muted);
+  background: rgba(34, 211, 238, 0.05);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.actions button:hover { color: var(--cyan); border-color: rgba(45, 212, 191, 0.4); }
+.actions .quit:hover { color: var(--red); border-color: rgba(255, 45, 85, 0.4); background: rgba(255, 45, 85, 0.07); }
