@@ -139,6 +139,57 @@ check('Overrides und Ziele werden gespeichert', () => {
   assert.strictEqual(new Store(tmp).data.overrides['domain:youtube.com'], undefined);
 });
 
+check('Ein Override färbt schon erfasste Zeit rückwirkend um', () => {
+  // Eigene, isolierte Store-Instanz — der gemeinsame "store" wird von
+  // späteren Tests weiterverwendet (u. a. die App-Rangliste), die sollen
+  // von diesem Testfall nichts mitbekommen.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+
+  // Nachstellung des realen Falls: "Pianoteq 9" (Original-Schreibweise mit
+  // Großbuchstaben, wie macOS den Prozessnamen meldet) lief schon eine Weile
+  // als Zeitverschwendung, bevor die Einstufung auf Produktiv gesetzt wird.
+  s.record(600, 'wasted', { app: 'Pianoteq 9' });
+  assert.strictEqual(s.day().apps['Pianoteq 9'].cat, 'wasted');
+
+  // Der Override-Schlüssel kommt aus der Oberfläche immer kleingeschrieben —
+  // das darf die Suche im Bucket (Original-Schreibweise) nicht verhindern.
+  s.setOverride('app:pianoteq 9', 'productive');
+
+  assert.strictEqual(s.day().apps['Pianoteq 9'].cat, 'productive', 'Kategorie im Bucket muss sich ändern');
+  assert.strictEqual(s.day().wasted, 0, 'Zeitverschwendung muss um die 600s sinken');
+  assert.strictEqual(s.day().productive, 600, 'Produktiv muss um die 600s steigen');
+
+  // "Automatisch einstufen" rechnet wieder zurück — Pianoteq 9 steht in
+  // keiner Liste, landet also bei Neutral (nicht wieder bei Wasted: das war
+  // ja nie die automatische Einstufung, nur der künstliche Ausgangswert oben).
+  s.setOverride('app:pianoteq 9', 'auto');
+  assert.strictEqual(s.day().apps['Pianoteq 9'].cat, 'neutral');
+  assert.strictEqual(s.day().wasted, 0, 'Zeitverschwendung bleibt bei 0 -- die Kategorie wandert nach Neutral');
+  assert.strictEqual(s.day().productive, 0);
+  assert.strictEqual(s.day().neutral, 600);
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Bestehende Overrides greifen automatisch beim nächsten Start', () => {
+  // Simuliert genau die Situation aus dem Fehlerbericht: eine Version vor
+  // diesem Fix hat den Override gespeichert, aber die alte Kategorie steht
+  // noch in den Tagesdaten. Ein Neustart (= neue Store-Instanz) muss das
+  // korrigieren, ohne dass irgendwer den Override erneut anklickt.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const stale = new Store(dir);
+  stale.record(600, 'wasted', { app: 'Pianoteq 9' });
+  stale.data.overrides['app:pianoteq 9'] = 'productive'; // direkt setzen, ohne reclassify auszulösen
+  stale.flush();
+
+  const restarted = new Store(dir);
+  assert.strictEqual(restarted.day().apps['Pianoteq 9'].cat, 'productive');
+  assert.strictEqual(restarted.day().wasted, 0);
+  assert.strictEqual(restarted.day().productive, 600);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 console.log('\nStatistik');
 check('Fokus-Score gewichtet neutral halb', () => {
   assert.strictEqual(focusScore({ productive: 0, neutral: 0, wasted: 0 }), 0);

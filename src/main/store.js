@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { classify } = require('./classify');
 
 /**
  * Persistenz. Alles bleibt lokal in einer einzigen JSON-Datei unter
@@ -81,6 +82,14 @@ class Store {
     } catch {
       // Erster Start oder beschädigte Datei — mit Defaults weitermachen.
     }
+
+    // Jeden gesetzten Override erneut anwenden. Deckt zwei Fälle ab: Daten,
+    // die vor einem Fix an reclassify() geschrieben wurden, und den Fall,
+    // dass der letzte Tick vor dem Neustart schon unter dem Override hätte
+    // laufen sollen, aber noch die alte Kategorie trug.
+    for (const [key, category] of Object.entries(this.data.overrides)) {
+      this.reclassify(key, category);
+    }
   }
 
   /** Gepufferter Schreibvorgang, damit wir nicht bei jedem Tick auf die Platte gehen. */
@@ -159,7 +168,50 @@ class Store {
   setOverride(key, category) {
     if (category === 'auto') delete this.data.overrides[key];
     else this.data.overrides[key] = category;
+    this.reclassify(key, category);
     this.flush();
+  }
+
+  /**
+   * Wendet eine geänderte Einstufung rückwirkend auf bereits erfasste Zeit an.
+   * Ohne das würde z. B. eine App, die man gerade erst auf "Produktiv" gesetzt
+   * hat, für den Rest des Tages weiter als Zeitverschwendung geführt — der
+   * Override würde nur für künftige Ticks greifen, nicht für die schon
+   * gezählten Minuten.
+   *
+   * Einschränkung: Die stündliche Tagesverlauf-Grafik speichert nicht, welche
+   * App in welcher Stunde lief — nur die Tagessumme pro App. Sie wird darum
+   * bewusst nicht rückwirkend angepasst; alle anderen Ansichten (Heute,
+   * Fokus-Reaktor, Verteilung, Ranglisten, Wochen-/Trend-Charts) schon, weil
+   * die auf den Tagessummen basieren.
+   */
+  reclassify(key, category) {
+    const sep = key.indexOf(':');
+    if (sep === -1) return;
+    const kind = key.slice(0, sep);
+    const wanted = key.slice(sep + 1); // schon kleingeschrieben, siehe Schlüssel-Erzeugung
+    const bucketName = kind === 'domain' ? 'domains' : 'apps';
+
+    for (const day of Object.values(this.data.days)) {
+      const bucket = day[bucketName];
+      if (!bucket) continue;
+
+      // Bucket-Schlüssel behalten die Original-Schreibweise (z. B. "Pianoteq 9"),
+      // der Override-Schlüssel ist dagegen immer kleingeschrieben — deshalb hier
+      // case-insensitiv suchen statt direkt zu indizieren.
+      const actualName = Object.keys(bucket).find((n) => n.toLowerCase() === wanted);
+      if (!actualName) continue;
+      const rec = bucket[actualName];
+
+      const targetCat = category === 'auto'
+        ? classify(kind === 'domain' ? { domain: actualName } : { app: actualName }, this.data.overrides).category
+        : category;
+
+      if (rec.cat === targetCat) continue;
+      day[rec.cat] -= rec.sec;
+      day[targetCat] += rec.sec;
+      rec.cat = targetCat;
+    }
   }
 
   setGoals(goals) {
