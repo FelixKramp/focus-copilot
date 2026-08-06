@@ -4,7 +4,11 @@
 :root {
   --bg: #050d11;
   --bg-deep: #030809;
-  --panel: rgba(9, 27, 35, 0.66);
+  /* Bewusst deckend: halbtransparente Flächen in Kombination mit
+     backdrop-filter kommen auf manchen GPUs (Skia Graphite) als leere Fläche
+     aus dem Compositor. Die Farbe entspricht dem früheren Ergebnis über dem
+     Seitenhintergrund. */
+  --panel: #0a1c25;
   --panel-solid: #09202a;
   --line: rgba(45, 212, 191, 0.16);
   --line-strong: rgba(45, 212, 191, 0.34);
@@ -63,8 +67,7 @@ body {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 22px 12px 92px; /* Platz für die Ampel-Buttons */
-  background: linear-gradient(180deg, rgba(4, 14, 18, 0.96), rgba(4, 14, 18, 0.72));
-  backdrop-filter: blur(14px);
+  background: #050f14;
   border-bottom: 1px solid var(--line);
   -webkit-app-region: drag;
 }
@@ -172,7 +175,6 @@ body {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  backdrop-filter: blur(6px);
 }
 
 /* Die kleinen Ecken-Winkel, die dem Ganzen den HUD-Charakter geben. */
@@ -461,8 +463,7 @@ body {
 .overlay {
   position: fixed; inset: 0; z-index: 60;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(2, 8, 11, 0.78);
-  backdrop-filter: blur(8px);
+  background: rgba(2, 8, 11, 0.86);
 }
 .overlay[hidden] { display: none; }
 

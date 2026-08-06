@@ -49,6 +49,15 @@ function createMainWindow() {
     },
   });
 
+  // Wenn die Oberfläche nicht lädt, soll das nicht stumm in einem leeren
+  // Fenster enden, sondern im Log stehen.
+  mainWindow.webContents.on('did-fail-load', (_e, code, desc, url) => {
+    console.error(`[Focus Co-Pilot] Oberfläche konnte nicht laden (${code} ${desc}): ${url}`);
+  });
+  mainWindow.webContents.on('preload-error', (_e, preloadPath, error) => {
+    console.error('[Focus Co-Pilot] preload fehlgeschlagen:', preloadPath, error);
+  });
+
   mainWindow.loadFile(path.join(RENDERER, 'index.html'));
   mainWindow.once('ready-to-show', () => mainWindow.show());
 

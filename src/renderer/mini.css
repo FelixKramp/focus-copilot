@@ -29,10 +29,10 @@ body {
   padding: 9px 12px 0;
   border-radius: 12px;
   border: 1px solid rgba(45, 212, 191, 0.28);
+  /* Deckend statt Blur-Backdrop — siehe Kommentar in dashboard.css. */
   background:
     radial-gradient(120% 100% at 50% 0%, rgba(34, 211, 238, 0.12), transparent 60%),
-    rgba(5, 18, 24, 0.94);
-  backdrop-filter: blur(20px);
+    #051218;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(34, 211, 238, 0.08);
   overflow: hidden;
   -webkit-app-region: drag;
