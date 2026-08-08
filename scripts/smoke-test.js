@@ -13,7 +13,7 @@ const path = require('path');
 const {
   classify, domainFromUrl, youtubeIdFromUrl, isIgnoredProcess,
 } = require('../src/main/classify');
-const { Store } = require('../src/main/store');
+const { Store, dayKey, emptyDay } = require('../src/main/store');
 const { buildSnapshot, focusScore } = require('../src/main/stats');
 
 let passed = 0;
@@ -187,6 +187,67 @@ check('Bestehende Overrides greifen automatisch beim nächsten Start', () => {
   assert.strictEqual(restarted.day().apps['Pianoteq 9'].cat, 'productive');
   assert.strictEqual(restarted.day().wasted, 0);
   assert.strictEqual(restarted.day().productive, 600);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+console.log('\nHighscores');
+check('Der allererste erfasste Tag setzt die Baseline, ohne zu feiern', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+
+  s.record(600, 'productive', { app: 'Xcode' }); // Score 100 %, aber erster Tag
+
+  assert.strictEqual(s.data.records.bestDayScore.score, 100);
+  assert.strictEqual(s.data.records.bestWeekAvg.score, 100);
+  assert.strictEqual(s.data.pendingRecord, null, 'der allererste Tag feiert nicht');
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Ein geschlagener Tages-Rekord wird aktualisiert und als unbestätigt markiert', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  // Wochen-Bestwert schon am Maximum, damit nur der Tages-Rekord auslöst.
+  s.data.records.bestDayScore = { score: 50, key: '2026-01-01' };
+  s.data.records.bestWeekAvg = { score: 100, key: '2026-01-01' };
+
+  s.record(600, 'productive', { app: 'Xcode' }); // heutiger Score: 100 %
+
+  assert.strictEqual(s.data.records.bestDayScore.score, 100);
+  assert.strictEqual(s.data.records.bestDayScore.key, dayKey());
+  assert.ok(s.data.pendingRecord, 'ein Rekord muss als unbestätigt markiert sein');
+  assert.strictEqual(s.data.pendingRecord.type, 'day');
+  assert.strictEqual(s.data.pendingRecord.score, 100);
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('acknowledgeRecord() löscht den unbestätigten Rekord', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  s.data.records.bestDayScore = { score: 50, key: '2026-01-01' };
+  s.data.records.bestWeekAvg = { score: 100, key: '2026-01-01' };
+  s.record(600, 'productive', { app: 'Xcode' });
+  assert.ok(s.data.pendingRecord);
+
+  s.acknowledgeRecord();
+
+  assert.strictEqual(s.data.pendingRecord, null);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Bestwerte und unbestätigter Rekord überleben Speichern und Neuladen', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  s.data.records.bestDayScore = { score: 50, key: '2026-01-01' };
+  s.data.records.bestWeekAvg = { score: 100, key: '2026-01-01' };
+  s.record(600, 'productive', { app: 'Xcode' });
+  s.flush();
+
+  const reloaded = new Store(dir);
+  assert.strictEqual(reloaded.data.records.bestDayScore.score, 100);
+  assert.ok(reloaded.data.pendingRecord, 'pendingRecord muss erhalten bleiben');
+
   fs.rmSync(dir, { recursive: true, force: true });
 });
 

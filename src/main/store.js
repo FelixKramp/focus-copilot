@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { classify } = require('./classify');
+const { focusScore } = require('./score');
 
 /**
  * Persistenz. Alles bleibt lokal in einer einzigen JSON-Datei unter
@@ -23,6 +24,13 @@ const DEFAULT_SETTINGS = {
   tracking: true,
   idleThresholdSeconds: 60,
 };
+
+function defaultRecords() {
+  return {
+    bestDayScore: { score: 0, key: null },
+    bestWeekAvg: { score: 0, key: null },
+  };
+}
 
 function emptyDay() {
   return {
@@ -55,6 +63,8 @@ class Store {
       overrides: {},
       goals: { ...DEFAULT_GOALS },
       settings: { ...DEFAULT_SETTINGS },
+      records: defaultRecords(),
+      pendingRecord: null,
     };
     this._saveTimer = null;
     this.load();
@@ -69,6 +79,11 @@ class Store {
         overrides: parsed.overrides || {},
         goals: { ...DEFAULT_GOALS, ...(parsed.goals || {}) },
         settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) },
+        records: {
+          bestDayScore: { ...defaultRecords().bestDayScore, ...((parsed.records || {}).bestDayScore || {}) },
+          bestWeekAvg: { ...defaultRecords().bestWeekAvg, ...((parsed.records || {}).bestWeekAvg || {}) },
+        },
+        pendingRecord: parsed.pendingRecord || null,
       };
       // Ältere Datensätze könnten das hours-Array noch nicht haben.
       for (const day of Object.values(this.data.days)) {
@@ -136,6 +151,7 @@ class Store {
     if (category === 'inactive') {
       day.inactive += seconds;
       bucket.i += seconds;
+      this.checkRecords();
       this.save();
       return;
     }
@@ -162,7 +178,46 @@ class Store {
       if (ctx.youtube.title) rec.title = ctx.youtube.title;
     }
 
+    this.checkRecords();
     this.save();
+  }
+
+  /**
+   * Prüft nach einem Tick, ob ein neuer Bestwert erreicht wurde (Tages-Score
+   * oder Ø-Score der letzten 7 Tage), und merkt ihn als unbestätigten Rekord.
+   * Der allererste erfasste Tag setzt still die Baseline, ohne zu feiern —
+   * sonst würde Tag 1 immer sofort als "Rekord" gelten.
+   */
+  checkRecords() {
+    const today = this.day();
+    if (today.total <= 0) return;
+
+    const todayScore = focusScore(today);
+    const bestDay = this.data.records.bestDayScore;
+    if (todayScore > bestDay.score) {
+      const hadBaseline = bestDay.score > 0;
+      this.data.records.bestDayScore = { score: todayScore, key: dayKey() };
+      if (hadBaseline) this.data.pendingRecord = { type: 'day', score: todayScore, key: dayKey() };
+    }
+
+    const weekSum = this.lastDays(7).reduce((acc, { data }) => ({
+      productive: acc.productive + data.productive,
+      neutral: acc.neutral + data.neutral,
+      wasted: acc.wasted + data.wasted,
+    }), { productive: 0, neutral: 0, wasted: 0 });
+    const weekAvg = focusScore(weekSum);
+    const bestWeek = this.data.records.bestWeekAvg;
+    if (weekAvg > bestWeek.score) {
+      const hadBaseline = bestWeek.score > 0;
+      this.data.records.bestWeekAvg = { score: weekAvg, key: dayKey() };
+      if (hadBaseline) this.data.pendingRecord = { type: 'week', score: weekAvg, key: dayKey() };
+    }
+  }
+
+  /** Markiert den aktuell unbestätigten Rekord als gesehen (Renderer hat die Animation gezeigt). */
+  acknowledgeRecord() {
+    this.data.pendingRecord = null;
+    this.flush();
   }
 
   setOverride(key, category) {
@@ -238,4 +293,12 @@ class Store {
   }
 }
 
-module.exports = { Store, dayKey, emptyDay, DEFAULT_GOALS, DEFAULT_SETTINGS };
+/** Kehrt dayKey() um: "2026-08-06" → lokales Date-Objekt um Mitternacht. */
+function parseDayKey(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+module.exports = {
+  Store, dayKey, parseDayKey, emptyDay, DEFAULT_GOALS, DEFAULT_SETTINGS,
+};
