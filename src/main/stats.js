@@ -1,6 +1,7 @@
 'use strict';
 
 const { dayKey } = require('./store');
+const { focusScore } = require('./score');
 
 /**
  * Baut den kompletten Snapshot, den Dashboard und Menüleisten-Vorschau rendern.
@@ -9,13 +10,6 @@ const { dayKey } = require('./store');
  */
 
 const WORK_DAYS_PER_YEAR = 365;
-
-function focusScore(day) {
-  // Produktiv zählt voll, neutral halb, Prokrastination gar nicht.
-  const base = day.productive + day.neutral + day.wasted;
-  if (base <= 0) return 0;
-  return Math.round(((day.productive + day.neutral * 0.5) / base) * 100);
-}
 
 /** Hochrechnung einer Tagesmenge auf Woche / Monat / Jahr / Jahrzehnt. */
 function project(secondsPerDay) {
