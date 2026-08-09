@@ -260,6 +260,40 @@ check('Fokus-Score gewichtet neutral halb', () => {
   assert.strictEqual(focusScore({ productive: 0, neutral: 100, wasted: 0 }), 50);
 });
 
+check('buildSnapshot() zeigt einen vergangenen Tag, wenn dateKey übergeben wird', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yKey = dayKey(yesterday);
+  s.data.days[yKey] = { ...emptyDay(), productive: 900, total: 900 };
+  s.flush();
+
+  const past = buildSnapshot(s, { running: true, current: {} }, yKey);
+  assert.strictEqual(past.date.key, yKey);
+  assert.strictEqual(past.date.isToday, false);
+  assert.strictEqual(past.today.productive, 900);
+
+  const today = buildSnapshot(s, { running: true, current: {} });
+  assert.strictEqual(today.date.isToday, true);
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Snapshot enthält Wochen-Score und Highscores unabhängig vom angezeigten Tag', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  s.record(600, 'productive', { app: 'Xcode' }); // Score 100 % heute
+
+  const snap = buildSnapshot(s, { running: true, current: {} });
+  assert.strictEqual(snap.weekScore.avg, 100);
+  assert.strictEqual(snap.records.bestDayScore.score, 100);
+  assert.strictEqual(snap.pendingRecord, null);
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 check('Snapshot enthält alles, was die Oberfläche braucht', () => {
   const fakeTracker = { running: true, current: { app: 'Safari', category: 'neutral', idle: false } };
   const snap = buildSnapshot(store, fakeTracker);
