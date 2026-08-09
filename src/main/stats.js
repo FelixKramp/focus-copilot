@@ -78,6 +78,11 @@ function buildSnapshot(store, tracker, dateKey) {
   const key = dateKey || dayKey();
   const isToday = key === dayKey();
   const viewed = store.day(key);
+  // Manche Felder (projection.wasted) müssen an den echten heutigen Tag
+  // gebunden bleiben, unabhängig vom angeforderten dateKey. Wenn der
+  // angezeigte Tag bereits heute ist, ist `viewed` identisch — sonst wird
+  // der echte heutige Tagesdatensatz separat geladen.
+  const todayData = isToday ? viewed : store.day();
   const goals = store.data.goals;
   const settings = store.data.settings;
 
@@ -136,7 +141,7 @@ function buildSnapshot(store, tracker, dateKey) {
       streak: computeStreak(store),
     },
     projection: {
-      wasted: project(viewed.wasted),
+      wasted: project(todayData.wasted),
       // Was das gesetzte Limit über ein Jahr bedeuten würde.
       limitDaysPerYear: (budgetSeconds * WORK_DAYS_PER_YEAR) / 86400,
       goalHoursPerYear: (goalSeconds * WORK_DAYS_PER_YEAR) / 3600,

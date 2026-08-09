@@ -291,6 +291,32 @@ check('Snapshot enthält Wochen-Score und Highscores unabhängig vom angezeigten
   assert.strictEqual(snap.records.bestDayScore.score, 100);
   assert.strictEqual(snap.pendingRecord, null);
 
+  // Felder, die an den echten heutigen Tag gebunden sein müssen (projection.wasted
+  // & Co.), dürfen sich nicht ändern, wenn ein vergangener Tag angezeigt wird.
+  const todayWasted = s.day().wasted; // 0 bislang — es wurde nur productive gebucht
+  const pastKey = '2020-01-01';
+  s.day(pastKey).wasted = 9999; // deutlich andere "wasted"-Sekunden als heute
+
+  const fakeTracker = { running: true, current: { app: 'Foo' } };
+  const pastSnap = buildSnapshot(s, fakeTracker, pastKey);
+
+  assert.strictEqual(pastSnap.date.key, pastKey);
+  assert.strictEqual(pastSnap.date.isToday, false);
+  assert.strictEqual(
+    pastSnap.projection.wasted.perDay,
+    todayWasted,
+    'projection.wasted muss an heute gebunden bleiben, nicht am angezeigten Tag',
+  );
+  assert.notStrictEqual(pastSnap.projection.wasted.perDay, 9999);
+
+  // current, tracking, last7/last14-Länge und der Streak hängen nicht vom
+  // angeforderten dateKey ab.
+  assert.strictEqual(pastSnap.current, fakeTracker.current);
+  assert.strictEqual(pastSnap.tracking, true);
+  assert.strictEqual(pastSnap.last7.length, 7);
+  assert.strictEqual(pastSnap.last14.length, 14);
+  assert.strictEqual(pastSnap.goals.streak, snap.goals.streak);
+
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
