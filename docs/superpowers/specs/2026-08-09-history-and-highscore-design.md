@@ -61,12 +61,25 @@ erreicht wurde.
     auf den angezeigten Tag), da Klick-Einstufung (Kontextmenü) weiterhin
     global über alle Tage wirkt (bestehendes Verhalten von `reclassify`,
     unverändert).
-- Auto-Refresh: Das bestehende Live-Update-Intervall (Poll auf
-  `snapshot:get`) ruft künftig `getSnapshot(dayKey(viewedDate))` auf (statt
-  immer ohne Parameter), damit ein offen gelassener vergangener Tag nicht
-  plötzlich auf heute zurückspringt. `current`/`tracking`/`records`-Felder
-  bleiben trotzdem aktuell, da sie serverseitig unabhängig vom angefragten
-  `dateKey` immer aus dem echten Heute berechnet werden (siehe oben).
+- **Live-Push statt Polling:** `main.js` schickt Snapshots nicht auf Anfrage,
+  sondern schiebt sie bei jedem Tracker-Tick (`tracker.on('update', ...)`)
+  über `pushSnapshot()` aktiv an alle offenen Fenster (`win.webContents.send('snapshot', ...)`).
+  Ohne Anpassung würde das den im Dashboard-Fenster angezeigten
+  vergangenen Tag alle paar Sekunden zurück auf heute überschreiben.
+  Fix: `main.js` merkt sich modulweit `let viewedDateKey = null;`
+  (`null` = heute). `ipcMain.handle('snapshot:get', (e, dateKey) => { ... })`
+  aktualisiert `viewedDateKey` auf `dateKey || null`, aber **nur wenn die
+  Anfrage vom Dashboard-Fenster (`mainWindow.webContents`) kommt** — die
+  Menüleisten-Vorschau (`panelWindow`) ruft `getSnapshot()` ebenfalls aber
+  immer ohne `dateKey` auf und soll das Dashboard nicht beeinflussen können.
+  `pushSnapshot()` baut pro Fenster einen eigenen Snapshot: für
+  `mainWindow` mit `viewedDateKey`, für alle anderen Fenster (Panel) immer
+  mit `undefined` (= heute). `mainWindow.on('closed', ...)` setzt
+  `viewedDateKey` zusätzlich zurück auf `null`, damit ein neu geöffnetes
+  Dashboard-Fenster wieder bei heute startet. `current`/`tracking`/
+  `records`-Felder bleiben davon unberührt, da sie in `buildSnapshot()`
+  unabhängig vom übergebenen `dateKey` immer aus dem echten Heute berechnet
+  werden (siehe oben).
 
 ## 2. Layout-Änderung
 
