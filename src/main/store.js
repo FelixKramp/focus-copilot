@@ -224,6 +224,7 @@ class Store {
     if (category === 'auto') delete this.data.overrides[key];
     else this.data.overrides[key] = category;
     this.reclassify(key, category);
+    this.checkRecords();
     this.flush();
   }
 

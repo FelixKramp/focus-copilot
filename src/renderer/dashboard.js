@@ -786,7 +786,7 @@ document.addEventListener('keydown', (e) => {
 
 /* ----------------------------------------------------------------- Buttons */
 
-$('btnToday').addEventListener('click', () => loadDay(new Date()));
+$('btnToday').addEventListener('click', async () => render(await window.copilot.getSnapshot()));
 $('btnPrevDay').addEventListener('click', () => {
   const prev = new Date(viewedDate);
   prev.setDate(prev.getDate() - 1);

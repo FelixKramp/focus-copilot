@@ -236,6 +236,31 @@ check('acknowledgeRecord() löscht den unbestätigten Rekord', () => {
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+check('setOverride() prüft Bestwerte erneut, statt auf den nächsten record() zu warten', () => {
+  // Deckt den Fall ab: Tracking pausiert (kein weiterer record()-Tick), Nutzer
+  // stuft eine App über das Kontextmenü um, und der Schub reißt den heutigen
+  // Score über den gespeicherten Tages-Rekord. Ohne checkRecords() in
+  // setOverride() bliebe der Bestwert bis zum nächsten Tick veraltet.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  s.data.records.bestDayScore = { score: 60, key: '2020-01-01' };
+  s.data.records.bestWeekAvg = { score: 100, key: '2020-01-01' }; // schon am Maximum, damit nur der Tages-Rekord auslöst
+
+  s.record(600, 'wasted', { app: 'Pianoteq 9' }); // heutiger Score: 0 % — unter dem Bestwert, löst noch nichts aus
+  assert.strictEqual(s.data.records.bestDayScore.score, 60, 'record() allein darf hier noch nichts ändern');
+  assert.strictEqual(s.data.pendingRecord, null);
+
+  s.setOverride('app:pianoteq 9', 'productive'); // schiebt die 600s rückwirkend auf Produktiv -> heutiger Score 100 %
+
+  assert.strictEqual(s.data.records.bestDayScore.score, 100, 'setOverride() muss den Bestwert selbst aktualisieren');
+  assert.strictEqual(s.data.records.bestDayScore.key, dayKey());
+  assert.ok(s.data.pendingRecord, 'ein Rekord muss als unbestätigt markiert sein');
+  assert.strictEqual(s.data.pendingRecord.type, 'day');
+  assert.strictEqual(s.data.pendingRecord.score, 100);
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 check('Bestwerte und unbestätigter Rekord überleben Speichern und Neuladen', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
   const s = new Store(dir);
