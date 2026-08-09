@@ -70,9 +70,12 @@ function createMainWindow() {
 
   mainWindow.on('close', (e) => {
     // Die App lebt in der Menüleiste weiter — Schließen heißt nur verstecken.
+    // 'closed' feuert hier nicht (das Fenster wird nicht zerstört), darum den
+    // angezeigten Tag schon hier zurücksetzen, nicht erst dort.
     if (!quitting) {
       e.preventDefault();
       mainWindow.hide();
+      viewedDateKey = null;
     }
   });
 
