@@ -19,6 +19,7 @@ const PRELOAD = path.join(__dirname, '..', 'preload', 'preload.js');
 let store = null;
 let tracker = null;
 let mainWindow = null;
+let viewedDateKey = null; // Tag, den das Dashboard-Fenster gerade anzeigt; null = heute
 let panelWindow = null;
 let tray = null;
 let quitting = false;
@@ -75,7 +76,7 @@ function createMainWindow() {
     }
   });
 
-  mainWindow.on('closed', () => { mainWindow = null; });
+  mainWindow.on('closed', () => { mainWindow = null; viewedDateKey = null; });
   return mainWindow;
 }
 
@@ -273,36 +274,47 @@ async function getAppIconDataUrl(appName) {
 
 function pushSnapshot() {
   if (!store || !tracker) return;
-  const snapshot = buildSnapshot(store, tracker);
   for (const win of BrowserWindow.getAllWindows()) {
-    if (!win.isDestroyed()) win.webContents.send('snapshot', snapshot);
+    if (win.isDestroyed()) continue;
+    // Nur das Dashboard-Fenster darf einen vergangenen Tag angezeigt bekommen —
+    // die Menüleisten-Vorschau zeigt immer heute.
+    const dateKey = win === mainWindow ? (viewedDateKey || undefined) : undefined;
+    win.webContents.send('snapshot', buildSnapshot(store, tracker, dateKey));
   }
 }
 
 /* --------------------------------------------------------------------- IPC */
 
 function registerIpc() {
-  ipcMain.handle('snapshot:get', () => buildSnapshot(store, tracker));
+  ipcMain.handle('snapshot:get', (e, dateKey) => {
+    if (mainWindow && e.sender === mainWindow.webContents) viewedDateKey = dateKey || null;
+    return buildSnapshot(store, tracker, dateKey);
+  });
 
   ipcMain.handle('override:set', (_e, { key, category }) => {
     store.setOverride(key, category);
-    return buildSnapshot(store, tracker);
+    return buildSnapshot(store, tracker, viewedDateKey || undefined);
   });
 
   ipcMain.handle('goals:set', (_e, goals) => {
     store.setGoals(goals);
-    return buildSnapshot(store, tracker);
+    return buildSnapshot(store, tracker, viewedDateKey || undefined);
   });
 
   ipcMain.handle('settings:set', (_e, settings) => {
     store.setSettings(settings);
-    return buildSnapshot(store, tracker);
+    return buildSnapshot(store, tracker, viewedDateKey || undefined);
   });
 
   ipcMain.handle('tracking:toggle', () => {
     if (tracker.running) tracker.stop(); else tracker.start();
     refreshTray();
-    return buildSnapshot(store, tracker);
+    return buildSnapshot(store, tracker, viewedDateKey || undefined);
+  });
+
+  ipcMain.handle('records:acknowledge', () => {
+    store.acknowledgeRecord();
+    return true;
   });
 
   ipcMain.handle('panel:close', () => { hidePanel(); return true; });
