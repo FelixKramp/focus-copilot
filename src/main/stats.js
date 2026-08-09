@@ -1,6 +1,7 @@
 'use strict';
 
-const { dayKey } = require('./store');
+const { dayKey, parseDayKey } = require('./store');
+const { focusScore } = require('./score');
 
 /**
  * Baut den kompletten Snapshot, den Dashboard und Menüleisten-Vorschau rendern.
@@ -9,13 +10,6 @@ const { dayKey } = require('./store');
  */
 
 const WORK_DAYS_PER_YEAR = 365;
-
-function focusScore(day) {
-  // Produktiv zählt voll, neutral halb, Prokrastination gar nicht.
-  const base = day.productive + day.neutral + day.wasted;
-  if (base <= 0) return 0;
-  return Math.round(((day.productive + day.neutral * 0.5) / base) * 100);
-}
 
 /** Hochrechnung einer Tagesmenge auf Woche / Monat / Jahr / Jahrzehnt. */
 function project(secondsPerDay) {
@@ -80,16 +74,23 @@ function computeStreak(store) {
   return streak;
 }
 
-function buildSnapshot(store, tracker) {
-  const today = store.day();
+function buildSnapshot(store, tracker, dateKey) {
+  const key = dateKey || dayKey();
+  const isToday = key === dayKey();
+  const viewed = store.day(key);
+  // Manche Felder (projection.wasted) müssen an den echten heutigen Tag
+  // gebunden bleiben, unabhängig vom angeforderten dateKey. Wenn der
+  // angezeigte Tag bereits heute ist, ist `viewed` identisch — sonst wird
+  // der echte heutige Tagesdatensatz separat geladen.
+  const todayData = isToday ? viewed : store.day();
   const goals = store.data.goals;
   const settings = store.data.settings;
 
   const goalSeconds = goals.productiveMinutes * 60;
   const budgetSeconds = goals.maxWasteMinutes * 60;
 
-  const last7 = store.lastDays(7).map(({ key, date, data }) => ({
-    key,
+  const last7 = store.lastDays(7).map(({ key: k, date, data }) => ({
+    key: k,
     label: date.toLocaleDateString('de-DE', { weekday: 'short' }).replace('.', ''),
     productive: data.productive,
     neutral: data.neutral,
@@ -97,18 +98,25 @@ function buildSnapshot(store, tracker) {
     goalReached: goalSeconds > 0 && data.productive >= goalSeconds,
   }));
 
-  const last14 = store.lastDays(14).map(({ key, date, data }) => ({
-    key,
+  const last14 = store.lastDays(14).map(({ key: k, date, data }) => ({
+    key: k,
     label: date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
     score: focusScore(data),
     hasData: data.total > 0,
   }));
 
+  const weekSum = store.lastDays(7).reduce((acc, { data }) => ({
+    productive: acc.productive + data.productive,
+    neutral: acc.neutral + data.neutral,
+    wasted: acc.wasted + data.wasted,
+  }), { productive: 0, neutral: 0, wasted: 0 });
+
   return {
     generatedAt: Date.now(),
     date: {
-      key: dayKey(),
-      label: new Date()
+      key,
+      isToday,
+      label: parseDayKey(key)
         .toLocaleDateString('de-DE', {
           weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric',
         })
@@ -117,33 +125,38 @@ function buildSnapshot(store, tracker) {
     tracking: tracker.running,
     current: tracker.current,
     today: {
-      total: today.total,
-      productive: today.productive,
-      neutral: today.neutral,
-      wasted: today.wasted,
-      inactive: today.inactive,
-      score: focusScore(today),
+      total: viewed.total,
+      productive: viewed.productive,
+      neutral: viewed.neutral,
+      wasted: viewed.wasted,
+      inactive: viewed.inactive,
+      score: focusScore(viewed),
     },
     goals: {
       productiveMinutes: goals.productiveMinutes,
       maxWasteMinutes: goals.maxWasteMinutes,
-      productiveProgress: goalSeconds > 0 ? Math.min(1, today.productive / goalSeconds) : 0,
-      budgetProgress: budgetSeconds > 0 ? Math.min(1, today.wasted / budgetSeconds) : 0,
-      budgetExceeded: budgetSeconds > 0 && today.wasted > budgetSeconds,
+      productiveProgress: goalSeconds > 0 ? Math.min(1, viewed.productive / goalSeconds) : 0,
+      budgetProgress: budgetSeconds > 0 ? Math.min(1, viewed.wasted / budgetSeconds) : 0,
+      budgetExceeded: budgetSeconds > 0 && viewed.wasted > budgetSeconds,
       streak: computeStreak(store),
     },
     projection: {
-      wasted: project(today.wasted),
+      wasted: project(todayData.wasted),
       // Was das gesetzte Limit über ein Jahr bedeuten würde.
       limitDaysPerYear: (budgetSeconds * WORK_DAYS_PER_YEAR) / 86400,
       goalHoursPerYear: (goalSeconds * WORK_DAYS_PER_YEAR) / 3600,
     },
-    hours: today.hours,
+    hours: viewed.hours,
     last7,
     last14,
-    apps: topList(today.apps, 6),
-    domains: topList(today.domains, 6),
-    youtube: topYoutube(today.youtube, 5),
+    weekScore: {
+      avg: focusScore(weekSum),
+    },
+    records: store.data.records,
+    pendingRecord: store.data.pendingRecord,
+    apps: topList(viewed.apps, 6),
+    domains: topList(viewed.domains, 6),
+    youtube: topYoutube(viewed.youtube, 5),
     overrides: store.data.overrides,
     settings,
   };

@@ -8,6 +8,49 @@ const $ = (id) => document.getElementById(id);
 let snapshot = null;
 let pendingGoals = null;
 
+let viewedDate = new Date();
+const MAX_DAYS_BACK = 29;
+
+/** Spiegelt store.js' dayKey() — der Renderer hat keinen Zugriff auf Node/Main-Code. */
+function dayKeyLocal(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Gegenstück zu dayKeyLocal(). */
+function parseDayKeyLocal(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function isSameDay(a, b) {
+  return dayKeyLocal(a) === dayKeyLocal(b);
+}
+
+function clampViewedDate(d) {
+  const today = new Date();
+  const earliest = new Date(today);
+  earliest.setDate(today.getDate() - MAX_DAYS_BACK);
+  if (d > today) return today;
+  if (d < earliest) return earliest;
+  return d;
+}
+
+async function loadDay(date) {
+  const target = clampViewedDate(date);
+  render(await window.copilot.getSnapshot(dayKeyLocal(target)));
+}
+
+function updateDateNavButtons() {
+  const today = new Date();
+  const earliest = new Date(today);
+  earliest.setDate(today.getDate() - MAX_DAYS_BACK);
+  $('btnPrevDay').disabled = !(viewedDate > earliest);
+  $('btnNextDay').disabled = isSameDay(viewedDate, today);
+}
+
 /* ------------------------------------------------------------ Formatierung */
 
 /** 4520 → "1 Std 15 Min", 900 → "15 Min" */
@@ -193,6 +236,34 @@ function renderTrend(points) {
   $('trend').innerHTML = svg;
 }
 
+function renderWeekScoreChart(points) {
+  const W = 320;
+  const H = 80;
+  const padX = 6;
+  const padTop = 8;
+  const padBottom = 6;
+  const usable = H - padTop - padBottom;
+
+  if (!points.length) { $('weekScoreChart').innerHTML = ''; return; }
+
+  const step = points.length > 1 ? (W - padX * 2) / (points.length - 1) : 0;
+  const coords = points.map((p, i) => [
+    padX + step * i,
+    padTop + usable * (1 - Math.min(100, Math.max(0, p.score)) / 100),
+  ]);
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
+  const path = coords.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  svg += `<path d="${path}" class="trend-line" />`;
+  coords.forEach(([x, y], i) => {
+    if (points[i].hasData) {
+      svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" class="trend-point" />`;
+    }
+  });
+  svg += '</svg>';
+  $('weekScoreChart').innerHTML = svg;
+}
+
 function trendTooltipHtml(p) {
   if (!p.hasData) {
     return `<div class="tt-title">${escapeHtml(p.label)}</div><div class="tt-row">Keine Daten erfasst</div>`;
@@ -238,6 +309,67 @@ function renderDay(hours) {
 
   svg += '</svg>';
   $('day').innerHTML = svg;
+}
+
+let freshRecordType = null; // 'day' | 'week' | null — bleibt für den Rest der Sitzung markiert
+
+function renderWeekScore(s) {
+  $('weekScoreAvg').textContent = String(s.weekScore.avg);
+  renderWeekScoreChart(s.last14.slice(-7));
+
+  const bestDay = s.records.bestDayScore;
+  $('bestDayScore').textContent = bestDay.key ? `${bestDay.score} %` : '—';
+  $('bestDayDate').textContent = bestDay.key
+    ? parseDayKeyLocal(bestDay.key).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
+    : '';
+
+  const bestWeek = s.records.bestWeekAvg;
+  $('bestWeekScore').textContent = bestWeek.key ? `${bestWeek.score} %` : '—';
+
+  $('badgeBestDay').classList.toggle('is-fresh', freshRecordType === 'day');
+  $('badgeBestWeek').classList.toggle('is-fresh', freshRecordType === 'week');
+}
+
+let celebratingRecord = false; // verhindert doppeltes Feiern, während acknowledgeRecord() läuft
+
+async function maybeCelebrateRecord(s) {
+  if (!s.pendingRecord || celebratingRecord) return;
+  celebratingRecord = true;
+  freshRecordType = s.pendingRecord.type;
+  playRecordBurst(s.pendingRecord);
+  try {
+    await window.copilot.acknowledgeRecord();
+  } finally {
+    celebratingRecord = false;
+  }
+}
+
+function playRecordBurst({ type }) {
+  const host = $('recordBurst');
+  const text = $('recordBurstText');
+  text.textContent = type === 'week' ? 'NEUE BESTE WOCHE' : 'NEUER REKORD';
+
+  host.querySelectorAll('.burst-particle').forEach((p) => p.remove());
+
+  const colors = ['var(--cyan)', 'var(--green-bright)'];
+  const count = 14;
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count;
+    const distance = 70 + Math.random() * 30;
+    const particle = document.createElement('span');
+    particle.className = 'burst-particle';
+    particle.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+    particle.style.setProperty('--dy', `${Math.sin(angle) * distance}px`);
+    particle.style.color = colors[i % colors.length];
+    particle.style.background = colors[i % colors.length];
+    host.appendChild(particle);
+  }
+
+  host.hidden = false;
+  setTimeout(() => {
+    host.hidden = true;
+    host.querySelectorAll('.burst-particle').forEach((p) => p.remove());
+  }, 1800);
 }
 
 /* --------------------------------------------------------------- Ranglisten */
@@ -361,6 +493,8 @@ function renderTicker(s) {
 
 function render(s) {
   snapshot = s;
+  viewedDate = parseDayKeyLocal(s.date.key);
+  updateDateNavButtons();
 
   $('dateLabel').textContent = s.date.label;
   $('statusText').textContent = s.tracking ? 'SYSTEM ONLINE · LIVE' : 'AUFZEICHNUNG PAUSIERT';
@@ -398,6 +532,8 @@ function render(s) {
   renderWeek(s.last7);
   renderTrend(s.last14);
   renderDay(s.hours);
+
+  $('currentStrip').hidden = !s.date.isToday;
 
   // Aktueller Kontext
   const cur = s.current || {};
@@ -444,6 +580,9 @@ function render(s) {
   renderYoutube(s.youtube);
   renderSites(s.domains);
   renderTicker(s);
+
+  maybeCelebrateRecord(s);
+  renderWeekScore(s);
 }
 
 /* ------------------------------------------------------------- Chart-Hover */
@@ -648,6 +787,16 @@ document.addEventListener('keydown', (e) => {
 /* ----------------------------------------------------------------- Buttons */
 
 $('btnToday').addEventListener('click', async () => render(await window.copilot.getSnapshot()));
+$('btnPrevDay').addEventListener('click', () => {
+  const prev = new Date(viewedDate);
+  prev.setDate(prev.getDate() - 1);
+  loadDay(prev);
+});
+$('btnNextDay').addEventListener('click', () => {
+  const next = new Date(viewedDate);
+  next.setDate(next.getDate() + 1);
+  loadDay(next);
+});
 $('btnTracking').addEventListener('click', async () => render(await window.copilot.toggleTracking()));
 
 /* -------------------------------------------------------------------- Boot */

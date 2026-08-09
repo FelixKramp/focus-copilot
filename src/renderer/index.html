@@ -21,9 +21,9 @@
 
     <div class="topbar-actions">
       <div class="datepill">
-        <span class="chev" aria-hidden="true">‹</span>
+        <button class="chev" id="btnPrevDay" aria-label="Vorheriger Tag">‹</button>
         <span id="dateLabel">—</span>
-        <span class="chev" aria-hidden="true">›</span>
+        <button class="chev" id="btnNextDay" aria-label="Nächster Tag">›</button>
       </div>
       <button class="btn" id="btnToday">HEUTE</button>
       <button class="btn" id="btnTracking" title="Tracking pausieren oder fortsetzen">PAUSE</button>
@@ -36,6 +36,9 @@
     <section class="card span-4" id="cardReactor">
       <div class="card-head"><h2>FOKUS-REAKTOR</h2><span class="card-sub">live</span></div>
       <div class="reactor">
+        <div class="record-burst" id="recordBurst" hidden>
+          <span class="record-burst-text" id="recordBurstText"></span>
+        </div>
         <div class="gauge">
           <svg viewBox="0 0 200 200" class="gauge-svg" aria-hidden="true">
             <defs>
@@ -137,7 +140,7 @@
     </section>
 
     <!-- Tagesverlauf -->
-    <section class="card span-12">
+    <section class="card span-6">
       <div class="card-head">
         <h2>TAGESVERLAUF</h2>
         <div class="chart-legend">
@@ -148,6 +151,26 @@
         </div>
       </div>
       <div class="chart chart--day" id="day"></div>
+    </section>
+
+    <section class="card span-6" id="cardWeekScore">
+      <div class="card-head"><h2>WOCHEN-SCORE</h2><span class="card-sub">letzte 7 Tage</span></div>
+      <div class="week-score-avg">
+        <strong id="weekScoreAvg">0</strong><span>%</span>
+        <label>Ø DIESE WOCHE</label>
+      </div>
+      <div class="chart chart--trend chart--week-score" id="weekScoreChart"></div>
+      <div class="records">
+        <div class="record-badge" id="badgeBestDay">
+          <label>BESTER TAG</label>
+          <strong id="bestDayScore">—</strong>
+          <span id="bestDayDate"></span>
+        </div>
+        <div class="record-badge" id="badgeBestWeek">
+          <label>BESTE WOCHE</label>
+          <strong id="bestWeekScore">—</strong>
+        </div>
+      </div>
     </section>
 
     <!-- Ranglisten -->
