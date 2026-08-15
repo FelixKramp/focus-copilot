@@ -300,6 +300,9 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .dot-neutral { background: var(--cyan); box-shadow: 0 0 6px rgba(34, 211, 238, 0.6); }
 .dot-wasted { background: var(--red); box-shadow: 0 0 6px rgba(255, 45, 85, 0.7); }
 .dot-idle { background: var(--idle); }
+/* Zeigt die leere Spur, nicht eine Füllfarbe — sonst verspricht die
+   Legende einen grauen Balken, den es nicht mehr gibt. */
+.dot-track { background: rgba(100, 116, 139, 0.14); box-shadow: inset 0 0 0 1px rgba(100, 116, 139, 0.4); }
 
 /* ------------------------------------------------------------ Heute-Karte */
 
@@ -349,7 +352,76 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .chart { width: 100%; cursor: default; }
 .chart--bars { height: 132px; }
 .chart--trend { height: 132px; }
-.chart--day { height: 150px; }
+/* Tagesverlauf: 24 Spuren aus HTML statt einer gestreckten SVG. Die alte
+   Fassung skalierte eine 480er viewBox mit preserveAspectRatio="none" auf die
+   Kartenbreite — dabei wurden Balkenkanten und Achsenbeschriftung horizontal
+   verzerrt. Als Flex-Layout gibt es keine Streckung und die Kanten bleiben
+   scharf, egal wie breit die Karte ist. */
+.chart--day {
+  height: 156px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* Die Karte teilt sich die Zeilenhöhe mit der Wochen-Score-Karte daneben und
+   ist deshalb höher als ihr Inhalt. Ohne das hier bleibt unter der Achse ein
+   grosses totes Feld stehen; so wächst stattdessen die Grafik. */
+#cardDay { display: flex; flex-direction: column; }
+#cardDay .chart--day { flex: 1; height: auto; min-height: 150px; }
+
+.day-grid {
+  flex: 1;
+  display: flex;
+  gap: 3px;
+  min-height: 0;
+}
+
+.day-hour {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  transition: opacity 0.12s ease;
+}
+
+/* Die leere Spur *ist* "nicht am Mac" — kein eigener Balken mehr. */
+.day-track {
+  flex: 1;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  border-radius: 3px;
+  background: rgba(100, 116, 139, 0.09);
+  overflow: hidden;
+}
+
+.seg { display: block; width: 100%; border-radius: 2px; flex: none; }
+.seg-productive { background: var(--green); }
+.seg-neutral { background: var(--cyan); }
+.seg-wasted { background: var(--red); }
+
+/* Die laufende Stunde bekommt einen dezenten Rahmen statt einer Füllung —
+   sie ist ja noch unvollständig und soll nicht wie ein Ausreisser wirken. */
+.day-hour.is-now .day-track {
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.28);
+}
+
+.day-hour.is-dim { opacity: 0.4; }
+
+.day-axis {
+  display: flex;
+  gap: 3px;
+  flex: none;
+}
+.day-axis span {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--muted-dim);
+  text-align: center;
+}
 .chart svg { width: 100%; height: 100%; overflow: visible; }
 
 .chart-legend { display: flex; gap: 14px; }

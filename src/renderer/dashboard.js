@@ -271,44 +271,79 @@ function trendTooltipHtml(p) {
   return `<div class="tt-title">${escapeHtml(p.label)}</div><div class="tt-row">Fokus-Score<b>${Math.round(p.score)} %</b></div>`;
 }
 
-function renderDay(hours) {
-  const W = 480;
-  const H = 150;
-  const padBottom = 20;
-  const padTop = 10;
-  const usable = H - padBottom - padTop;
-  const max = Math.max(300, ...hours.map((h) => h.p + h.n + h.w + h.i));
-  const slot = W / 24;
-  const barW = slot * 0.5;
+const HOUR_SECONDS = 3600;
+let lastDayHours = [];
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
-  svg += `<line x1="0" y1="${H - padBottom}" x2="${W}" y2="${H - padBottom}" class="grid-line" />`;
+/**
+ * Tagesverlauf: eine Spur je Stunde, immer volle 60 Minuten hoch.
+ *
+ * Früher war "nicht am PC" ein eigener Balken im Stapel. Weil man den grössten
+ * Teil des Tages nicht am Rechner sitzt, war die Grafik damit eine Wand aus
+ * Grau, die ausserdem die Skala bestimmte — die paar Minuten, um die es
+ * eigentlich geht, wurden zu Strichen zusammengedrückt. Jetzt ist Abwesenheit
+ * der *leere* Teil der Spur: sichtbar, aber still. Und weil jede Spur für
+ * dieselben 60 Minuten steht, sind die Stunden direkt vergleichbar, statt
+ * relativ zur jeweils vollsten Stunde des Tages.
+ */
+function renderDay(hours, isToday) {
+  lastDayHours = hours;
+  const currentHour = isToday ? new Date().getHours() : -1;
 
+  const parts = [
+    { key: 'p', cls: 'seg-productive' },
+    { key: 'n', cls: 'seg-neutral' },
+    { key: 'w', cls: 'seg-wasted' },
+  ];
+
+  let grid = '';
   hours.forEach((h, i) => {
-    const cx = slot * i + slot / 2;
-    const x = cx - barW / 2;
-    let y = H - padBottom;
-
-    const stack = [
-      { v: h.p, c: 'var(--green)' },
-      { v: h.n, c: 'var(--cyan)' },
-      { v: h.w, c: 'var(--red)' },
-      { v: h.i, c: 'var(--idle)' },
-    ];
-    for (const part of stack) {
-      if (part.v <= 0) continue;
-      const barH = (part.v / max) * usable;
-      y -= barH;
-      svg += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="${part.c}" rx="1" opacity="0.9" />`;
+    let segs = '';
+    for (const part of parts) {
+      const value = h[part.key] || 0;
+      if (value <= 0) continue;
+      // Eine einzelne Minute darf nicht unsichtbar sein, deshalb die Untergrenze.
+      const pct = Math.max(2, Math.min(100, (value / HOUR_SECONDS) * 100));
+      segs += `<i class="seg ${part.cls}" style="height:${pct.toFixed(2)}%"></i>`;
     }
-
-    if (i % 3 === 0) {
-      svg += `<text x="${cx}" y="${H - 6}" text-anchor="middle" class="axis-label">${String(i).padStart(2, '0')}</text>`;
-    }
+    const classes = ['day-hour'];
+    if (i === currentHour) classes.push('is-now');
+    if (!segs) classes.push('is-empty');
+    grid += `<div class="${classes.join(' ')}" data-i="${i}">`
+      + `<div class="day-track">${segs}</div></div>`;
   });
 
-  svg += '</svg>';
-  $('day').innerHTML = svg;
+  let axis = '';
+  for (let i = 0; i < 24; i++) {
+    axis += `<span>${i % 3 === 0 ? String(i).padStart(2, '0') : ''}</span>`;
+  }
+
+  $('day').innerHTML = `<div class="day-grid">${grid}</div><div class="day-axis">${axis}</div>`;
+}
+
+function dayTooltipHtml(i, h) {
+  const from = String(i).padStart(2, '0');
+  const to = String((i + 1) % 24).padStart(2, '0');
+  const head = `<div class="tt-title">${from}:00 – ${to}:00</div>`;
+
+  if ((h.p || 0) + (h.n || 0) + (h.w || 0) <= 0) {
+    return `${head}<div class="tt-row">Nicht am Mac</div>`;
+  }
+
+  // In Minuten runden und den Rest daraus ableiten, statt jeden der vier Werte
+  // einzeln zu runden — sonst steht in einer Stunde schon mal 61 Minuten.
+  const min = (seconds) => Math.round((seconds || 0) / 60);
+  const p = min(h.p);
+  const n = min(h.n);
+  const w = min(h.w);
+  const away = Math.max(0, 60 - p - n - w);
+
+  return `
+    ${head}
+    <div class="tt-row"><i class="dot dot-productive"></i>Produktiv<b>${p} Min</b></div>
+    <div class="tt-row"><i class="dot dot-neutral"></i>Neutral<b>${n} Min</b></div>
+    <div class="tt-row"><i class="dot dot-wasted"></i>Prokrastination<b>${w} Min</b></div>
+    <div class="tt-total"><span>Nicht am Mac</span><b>${away} Min</b></div>
+  `;
 }
 
 let freshRecordType = null; // 'day' | 'week' | null — bleibt für den Rest der Sitzung markiert
@@ -531,7 +566,7 @@ function render(s) {
   renderDonut(s.today);
   renderWeek(s.last7);
   renderTrend(s.last14);
-  renderDay(s.hours);
+  renderDay(s.hours, s.date.isToday);
 
   $('currentStrip').hidden = !s.date.isToday;
 
@@ -674,8 +709,31 @@ function attachTrendHover() {
   });
 }
 
+/** Hover für den Tagesverlauf. Trefferfläche ist die ganze Stundenspalte,
+    nicht nur der gefüllte Teil — sonst trifft man leere Stunden nie. */
+function attachDayHover() {
+  const container = $('day');
+  container.addEventListener('mousemove', (e) => {
+    const cell = e.target.closest('.day-hour');
+    if (!cell || !lastDayHours.length) {
+      hideTooltip();
+      return;
+    }
+    const i = Number(cell.dataset.i);
+    for (const other of container.querySelectorAll('.day-hour')) {
+      other.classList.toggle('is-dim', other !== cell);
+    }
+    showTooltip(e.clientX, e.clientY, dayTooltipHtml(i, lastDayHours[i] || {}));
+  });
+  container.addEventListener('mouseleave', () => {
+    for (const cell of container.querySelectorAll('.day-hour')) cell.classList.remove('is-dim');
+    hideTooltip();
+  });
+}
+
 attachWeekHover();
 attachTrendHover();
+attachDayHover();
 
 /* ------------------------------------------------------- Einstufungs-Menü */
 
