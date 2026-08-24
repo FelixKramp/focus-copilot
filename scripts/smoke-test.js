@@ -67,7 +67,10 @@ check('Manuelle Einstufung schlägt die automatische', () => {
 });
 
 check('Hintergrund-Hilfsprozesse werden ignoriert', () => {
-  assert.strictEqual(isIgnoredProcess('app_mode_loader'), true);
+  // app_mode_loader ist KEIN Hilfsprozess, sondern der (irreführende) Prozess-
+  // name jeder "Als Fenster öffnen"-Website-Verknüpfung (z. B. YouTube als
+  // eigene App) — der wird in monitor.js aufgelöst, nicht verworfen.
+  assert.strictEqual(isIgnoredProcess('app_mode_loader'), false);
   assert.strictEqual(isIgnoredProcess('Dock'), true);
   assert.strictEqual(isIgnoredProcess('Control Center'), true);
   assert.strictEqual(isIgnoredProcess(''), true);

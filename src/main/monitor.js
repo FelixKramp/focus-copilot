@@ -1,6 +1,7 @@
 'use strict';
 
 const { execFile } = require('child_process');
+const path = require('path');
 const { BROWSERS } = require('./classify');
 
 /** Führt ein osascript aus und liefert stdout (oder '' bei Fehler). */
@@ -25,6 +26,36 @@ const CHROMIUM = new Set([
 ]);
 
 /**
+ * "Als Fenster öffnen"-Verknüpfungen (Chrome/Edge/Brave: eine Website als
+ * eigenständige App installiert, z. B. YouTube) laufen technisch als eigenes
+ * .app-Bundle, aber der tatsächliche Prozess heißt bei macOS/System Events
+ * immer "app_mode_loader" — nie der Name der Verknüpfung. Ohne Auflösung
+ * landet jede so installierte Seite unter diesem generischen Namen, der
+ * fälschlich wie ein kurzlebiger Launcher-Hilfsprozess aussieht (und früher
+ * deshalb auch als solcher ignoriert wurde) und nie erfasst wird.
+ *
+ * Chrome hinterlegt Name und Ziel-URL der Verknüpfung im Bundle selbst, das
+ * lässt sich ohne Zusatzberechtigung auslesen.
+ *
+ * @returns {Promise<{name: string, url: string}|null>}
+ */
+function resolveAppModeShortcut(bundlePath) {
+  return new Promise((resolve) => {
+    if (!bundlePath) return resolve(null);
+    const plist = path.join(bundlePath, 'Contents', 'Info.plist');
+    execFile(
+      '/usr/libexec/PlistBuddy',
+      ['-c', 'Print :CFBundleName', '-c', 'Print :CrAppModeShortcutURL', plist],
+      { timeout: 2000 },
+      (_err, stdout) => {
+        const [name = '', url = ''] = String(stdout || '').trim().split('\n');
+        resolve(name.trim() ? { name: name.trim(), url: url.trim() } : null);
+      }
+    );
+  });
+}
+
+/**
  * Liest die aktive App und — falls es ein Browser ist — Titel und URL des
  * aktiven Tabs. Ein einziger osascript-Aufruf, damit der Poll günstig bleibt.
  *
@@ -39,6 +70,27 @@ async function getFrontmost() {
   const lower = appName.toLowerCase();
   let title = '';
   let url = '';
+
+  if (lower === 'app_mode_loader') {
+    const bundlePath = await osascript(
+      'tell application "System Events" to get POSIX path of (file of first application process whose frontmost is true)'
+    );
+    const shortcut = await resolveAppModeShortcut(bundlePath);
+    title = await osascript(
+      `tell application "System Events" to tell process "app_mode_loader"
+         try
+           return name of front window
+         on error
+           return ""
+         end try
+       end tell`
+    );
+    return {
+      app: shortcut ? shortcut.name : appName,
+      title: title.trim(),
+      url: shortcut ? shortcut.url : '',
+    };
+  }
 
   if (BROWSER_SET.has(lower)) {
     if (lower === 'safari' || lower === 'orion') {
