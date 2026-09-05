@@ -1,7 +1,7 @@
 'use strict';
 
 const { dayKey, parseDayKey } = require('./store');
-const { focusScore } = require('./score');
+const { focusScore, scoreTrend } = require('./score');
 
 /**
  * Baut den kompletten Snapshot, den Dashboard und Menüleisten-Vorschau rendern.
@@ -85,6 +85,7 @@ function buildSnapshot(store, tracker, dateKey) {
   const todayData = isToday ? viewed : store.day();
   const goals = store.data.goals;
   const settings = store.data.settings;
+  const current = tracker.current || {};
 
   const goalSeconds = goals.productiveMinutes * 60;
   const budgetSeconds = goals.maxWasteMinutes * 60;
@@ -123,7 +124,7 @@ function buildSnapshot(store, tracker, dateKey) {
         .replace(',', ''),
     },
     tracking: tracker.running,
-    current: tracker.current,
+    current,
     today: {
       total: viewed.total,
       productive: viewed.productive,
@@ -131,6 +132,9 @@ function buildSnapshot(store, tracker, dateKey) {
       wasted: viewed.wasted,
       inactive: viewed.inactive,
       score: focusScore(viewed),
+      // Wohin die laufende Taetigkeit den Score zieht. Nur heute und nur bei
+      // laufendem Tracking bewegt sich ueberhaupt etwas.
+      trend: isToday && tracker.running ? scoreTrend(viewed, current.category) : null,
     },
     goals: {
       productiveMinutes: goals.productiveMinutes,
@@ -162,4 +166,4 @@ function buildSnapshot(store, tracker, dateKey) {
   };
 }
 
-module.exports = { buildSnapshot, focusScore, project };
+module.exports = { buildSnapshot, focusScore, scoreTrend, project };

@@ -13,7 +13,8 @@ const { focusScore } = require('./score');
  *   days:      { "2026-08-06": DayRecord }
  *   overrides: { "app:final cut pro": "productive", "domain:youtube.com": "wasted" }
  *   goals:     { productiveMinutes, maxWasteMinutes }
- *   settings:  { notifications, nudgeMinutes, tracking, idleThresholdSeconds }
+ *   settings:  { notifications, nudgeMinutes, tracking, idleThresholdSeconds,
+ *                trayScore }
  */
 
 const DEFAULT_GOALS = { productiveMinutes: 180, maxWasteMinutes: 60 };
@@ -23,6 +24,8 @@ const DEFAULT_SETTINGS = {
   nudgeMinutes: 10,
   tracking: true,
   idleThresholdSeconds: 60,
+  // Score und Trendpfeil neben dem Menueleisten-Icon.
+  trayScore: true,
 };
 
 function defaultRecords() {

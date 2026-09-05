@@ -15,6 +15,7 @@ const {
 } = require('../src/main/classify');
 const { Store, dayKey, emptyDay } = require('../src/main/store');
 const { buildSnapshot, focusScore } = require('../src/main/stats');
+const { scoreTrend } = require('../src/main/score');
 
 let passed = 0;
 function check(name, fn) {
@@ -286,6 +287,69 @@ check('Fokus-Score gewichtet neutral halb', () => {
   assert.strictEqual(focusScore({ productive: 0, neutral: 0, wasted: 100 }), 0);
   assert.strictEqual(focusScore({ productive: 50, neutral: 0, wasted: 50 }), 50);
   assert.strictEqual(focusScore({ productive: 0, neutral: 100, wasted: 0 }), 50);
+});
+
+check('Der Trendpfeil zeigt, wohin die laufende Tätigkeit den Score zieht', () => {
+  const day = (productive, neutral, wasted) => ({ productive, neutral, wasted });
+
+  // Frischer Tag: der Score steht auf 0, alles außer Prokrastination hebt ihn.
+  assert.strictEqual(scoreTrend(day(0, 0, 0), 'productive'), 'up');
+  assert.strictEqual(scoreTrend(day(0, 0, 0), 'neutral'), 'up');
+  assert.strictEqual(scoreTrend(day(0, 0, 0), 'wasted'), 'flat');
+
+  // Score 50: Neutral hält ihn genau, Produktiv hebt, Prokrastination senkt.
+  const halb = day(50, 0, 50);
+  assert.strictEqual(focusScore(halb), 50);
+  assert.strictEqual(scoreTrend(halb, 'productive'), 'up');
+  assert.strictEqual(scoreTrend(halb, 'neutral'), 'flat');
+  assert.strictEqual(scoreTrend(halb, 'wasted'), 'down');
+
+  // Der Fall, auf den es ankommt: dieselbe neutrale Tätigkeit, zwei Richtungen.
+  assert.strictEqual(scoreTrend(day(80, 0, 20), 'neutral'), 'down', 'Score 80 wird von Neutral heruntergezogen');
+  assert.strictEqual(scoreTrend(day(30, 0, 70), 'neutral'), 'up', 'Score 30 wird von Neutral hochgezogen');
+
+  // An den Rändern gibt es keine Richtung mehr.
+  assert.strictEqual(scoreTrend(day(100, 0, 0), 'productive'), 'flat', '100 kann nicht weiter steigen');
+  assert.strictEqual(scoreTrend(day(0, 0, 100), 'wasted'), 'flat', '0 kann nicht weiter fallen');
+});
+
+check('Der Trend rechnet mit dem ungerundeten Score', () => {
+  // Angezeigt werden hier 50, tatsächlich sind es 49,5 — eine neutrale
+  // Tätigkeit zieht also noch nach oben, auch wenn die Zahl erst später springt.
+  const knapp = { productive: 99, neutral: 0, wasted: 101 };
+  assert.strictEqual(focusScore(knapp), 50);
+  assert.strictEqual(scoreTrend(knapp, 'neutral'), 'up');
+});
+
+check('Ohne zählende Tätigkeit gibt es keinen Pfeil', () => {
+  // Inaktive Zeit geht gar nicht in den Score ein, der Score bewegt sich also nicht.
+  const day = { productive: 60, neutral: 0, wasted: 0 };
+  assert.strictEqual(scoreTrend(day, 'inactive'), null);
+  assert.strictEqual(scoreTrend(day, undefined), null);
+  assert.strictEqual(scoreTrend(day, ''), null);
+});
+
+check('Der Snapshot trägt den Trend nur für heute und nur bei laufendem Tracking', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-trend-'));
+  const s = new Store(dir);
+  s.record(600, 'productive', { app: 'Xcode' }); // Score 100
+
+  const laeuft = { running: true, current: { app: 'Xcode', category: 'productive' } };
+  assert.strictEqual(buildSnapshot(s, laeuft).today.trend, 'flat', '100 haltend');
+
+  s.record(600, 'wasted', { app: 'TikTok' }); // Score 50
+  assert.strictEqual(buildSnapshot(s, laeuft).today.trend, 'up');
+
+  const pausiert = { running: false, current: { app: '', category: 'neutral' } };
+  assert.strictEqual(buildSnapshot(s, pausiert).today.trend, null, 'pausiert bewegt nichts');
+
+  const abwesend = { running: true, current: { category: 'inactive', idle: true } };
+  assert.strictEqual(buildSnapshot(s, abwesend).today.trend, null, 'abwesend bewegt nichts');
+
+  // Ein vergangener Tag bewegt sich nicht mehr.
+  assert.strictEqual(buildSnapshot(s, laeuft, '2020-01-01').today.trend, null);
+
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 check('buildSnapshot() zeigt einen vergangenen Tag, wenn dateKey übergeben wird', () => {
