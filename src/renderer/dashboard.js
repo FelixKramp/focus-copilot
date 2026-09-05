@@ -8,6 +8,49 @@ const $ = (id) => document.getElementById(id);
 let snapshot = null;
 let pendingGoals = null;
 
+let viewedDate = new Date();
+const MAX_DAYS_BACK = 29;
+
+/** Spiegelt store.js' dayKey() — der Renderer hat keinen Zugriff auf Node/Main-Code. */
+function dayKeyLocal(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Gegenstück zu dayKeyLocal(). */
+function parseDayKeyLocal(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function isSameDay(a, b) {
+  return dayKeyLocal(a) === dayKeyLocal(b);
+}
+
+function clampViewedDate(d) {
+  const today = new Date();
+  const earliest = new Date(today);
+  earliest.setDate(today.getDate() - MAX_DAYS_BACK);
+  if (d > today) return today;
+  if (d < earliest) return earliest;
+  return d;
+}
+
+async function loadDay(date) {
+  const target = clampViewedDate(date);
+  render(await window.copilot.getSnapshot(dayKeyLocal(target)));
+}
+
+function updateDateNavButtons() {
+  const today = new Date();
+  const earliest = new Date(today);
+  earliest.setDate(today.getDate() - MAX_DAYS_BACK);
+  $('btnPrevDay').disabled = !(viewedDate > earliest);
+  $('btnNextDay').disabled = isSameDay(viewedDate, today);
+}
+
 /* ------------------------------------------------------------ Formatierung */
 
 /** 4520 → "1 Std 15 Min", 900 → "15 Min" */
@@ -193,6 +236,34 @@ function renderTrend(points) {
   $('trend').innerHTML = svg;
 }
 
+function renderWeekScoreChart(points) {
+  const W = 320;
+  const H = 80;
+  const padX = 6;
+  const padTop = 8;
+  const padBottom = 6;
+  const usable = H - padTop - padBottom;
+
+  if (!points.length) { $('weekScoreChart').innerHTML = ''; return; }
+
+  const step = points.length > 1 ? (W - padX * 2) / (points.length - 1) : 0;
+  const coords = points.map((p, i) => [
+    padX + step * i,
+    padTop + usable * (1 - Math.min(100, Math.max(0, p.score)) / 100),
+  ]);
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
+  const path = coords.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  svg += `<path d="${path}" class="trend-line" />`;
+  coords.forEach(([x, y], i) => {
+    if (points[i].hasData) {
+      svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" class="trend-point" />`;
+    }
+  });
+  svg += '</svg>';
+  $('weekScoreChart').innerHTML = svg;
+}
+
 function trendTooltipHtml(p) {
   if (!p.hasData) {
     return `<div class="tt-title">${escapeHtml(p.label)}</div><div class="tt-row">Keine Daten erfasst</div>`;
@@ -200,44 +271,140 @@ function trendTooltipHtml(p) {
   return `<div class="tt-title">${escapeHtml(p.label)}</div><div class="tt-row">Fokus-Score<b>${Math.round(p.score)} %</b></div>`;
 }
 
-function renderDay(hours) {
-  const W = 480;
-  const H = 150;
-  const padBottom = 20;
-  const padTop = 10;
-  const usable = H - padBottom - padTop;
-  const max = Math.max(300, ...hours.map((h) => h.p + h.n + h.w + h.i));
-  const slot = W / 24;
-  const barW = slot * 0.5;
+const HOUR_SECONDS = 3600;
+let lastDayHours = [];
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
-  svg += `<line x1="0" y1="${H - padBottom}" x2="${W}" y2="${H - padBottom}" class="grid-line" />`;
+/**
+ * Tagesverlauf: eine Spur je Stunde, immer volle 60 Minuten hoch.
+ *
+ * Früher war "nicht am PC" ein eigener Balken im Stapel. Weil man den grössten
+ * Teil des Tages nicht am Rechner sitzt, war die Grafik damit eine Wand aus
+ * Grau, die ausserdem die Skala bestimmte — die paar Minuten, um die es
+ * eigentlich geht, wurden zu Strichen zusammengedrückt. Jetzt ist Abwesenheit
+ * der *leere* Teil der Spur: sichtbar, aber still. Und weil jede Spur für
+ * dieselben 60 Minuten steht, sind die Stunden direkt vergleichbar, statt
+ * relativ zur jeweils vollsten Stunde des Tages.
+ */
+function renderDay(hours, isToday) {
+  lastDayHours = hours;
+  const currentHour = isToday ? new Date().getHours() : -1;
 
+  const parts = [
+    { key: 'p', cls: 'seg-productive' },
+    { key: 'n', cls: 'seg-neutral' },
+    { key: 'w', cls: 'seg-wasted' },
+  ];
+
+  let grid = '';
   hours.forEach((h, i) => {
-    const cx = slot * i + slot / 2;
-    const x = cx - barW / 2;
-    let y = H - padBottom;
-
-    const stack = [
-      { v: h.p, c: 'var(--green)' },
-      { v: h.n, c: 'var(--cyan)' },
-      { v: h.w, c: 'var(--red)' },
-      { v: h.i, c: 'var(--idle)' },
-    ];
-    for (const part of stack) {
-      if (part.v <= 0) continue;
-      const barH = (part.v / max) * usable;
-      y -= barH;
-      svg += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="${part.c}" rx="1" opacity="0.9" />`;
+    let segs = '';
+    for (const part of parts) {
+      const value = h[part.key] || 0;
+      if (value <= 0) continue;
+      // Eine einzelne Minute darf nicht unsichtbar sein, deshalb die Untergrenze.
+      const pct = Math.max(2, Math.min(100, (value / HOUR_SECONDS) * 100));
+      segs += `<i class="seg ${part.cls}" style="height:${pct.toFixed(2)}%"></i>`;
     }
-
-    if (i % 3 === 0) {
-      svg += `<text x="${cx}" y="${H - 6}" text-anchor="middle" class="axis-label">${String(i).padStart(2, '0')}</text>`;
-    }
+    const classes = ['day-hour'];
+    if (i === currentHour) classes.push('is-now');
+    if (!segs) classes.push('is-empty');
+    grid += `<div class="${classes.join(' ')}" data-i="${i}">`
+      + `<div class="day-track">${segs}</div></div>`;
   });
 
-  svg += '</svg>';
-  $('day').innerHTML = svg;
+  let axis = '';
+  for (let i = 0; i < 24; i++) {
+    axis += `<span>${i % 3 === 0 ? String(i).padStart(2, '0') : ''}</span>`;
+  }
+
+  $('day').innerHTML = `<div class="day-grid">${grid}</div><div class="day-axis">${axis}</div>`;
+}
+
+function dayTooltipHtml(i, h) {
+  const from = String(i).padStart(2, '0');
+  const to = String((i + 1) % 24).padStart(2, '0');
+  const head = `<div class="tt-title">${from}:00 – ${to}:00</div>`;
+
+  if ((h.p || 0) + (h.n || 0) + (h.w || 0) <= 0) {
+    return `${head}<div class="tt-row">Nicht am Mac</div>`;
+  }
+
+  // In Minuten runden und den Rest daraus ableiten, statt jeden der vier Werte
+  // einzeln zu runden — sonst steht in einer Stunde schon mal 61 Minuten.
+  const min = (seconds) => Math.round((seconds || 0) / 60);
+  const p = min(h.p);
+  const n = min(h.n);
+  const w = min(h.w);
+  const away = Math.max(0, 60 - p - n - w);
+
+  return `
+    ${head}
+    <div class="tt-row"><i class="dot dot-productive"></i>Produktiv<b>${p} Min</b></div>
+    <div class="tt-row"><i class="dot dot-neutral"></i>Neutral<b>${n} Min</b></div>
+    <div class="tt-row"><i class="dot dot-wasted"></i>Prokrastination<b>${w} Min</b></div>
+    <div class="tt-total"><span>Nicht am Mac</span><b>${away} Min</b></div>
+  `;
+}
+
+let freshRecordType = null; // 'day' | 'week' | null — bleibt für den Rest der Sitzung markiert
+
+function renderWeekScore(s) {
+  $('weekScoreAvg').textContent = String(s.weekScore.avg);
+  renderWeekScoreChart(s.last14.slice(-7));
+
+  const bestDay = s.records.bestDayScore;
+  $('bestDayScore').textContent = bestDay.key ? `${bestDay.score} %` : '—';
+  $('bestDayDate').textContent = bestDay.key
+    ? parseDayKeyLocal(bestDay.key).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
+    : '';
+
+  const bestWeek = s.records.bestWeekAvg;
+  $('bestWeekScore').textContent = bestWeek.key ? `${bestWeek.score} %` : '—';
+
+  $('badgeBestDay').classList.toggle('is-fresh', freshRecordType === 'day');
+  $('badgeBestWeek').classList.toggle('is-fresh', freshRecordType === 'week');
+}
+
+let celebratingRecord = false; // verhindert doppeltes Feiern, während acknowledgeRecord() läuft
+
+async function maybeCelebrateRecord(s) {
+  if (!s.pendingRecord || celebratingRecord) return;
+  celebratingRecord = true;
+  freshRecordType = s.pendingRecord.type;
+  playRecordBurst(s.pendingRecord);
+  try {
+    await window.copilot.acknowledgeRecord();
+  } finally {
+    celebratingRecord = false;
+  }
+}
+
+function playRecordBurst({ type }) {
+  const host = $('recordBurst');
+  const text = $('recordBurstText');
+  text.textContent = type === 'week' ? 'NEUE BESTE WOCHE' : 'NEUER REKORD';
+
+  host.querySelectorAll('.burst-particle').forEach((p) => p.remove());
+
+  const colors = ['var(--cyan)', 'var(--green-bright)'];
+  const count = 14;
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count;
+    const distance = 70 + Math.random() * 30;
+    const particle = document.createElement('span');
+    particle.className = 'burst-particle';
+    particle.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+    particle.style.setProperty('--dy', `${Math.sin(angle) * distance}px`);
+    particle.style.color = colors[i % colors.length];
+    particle.style.background = colors[i % colors.length];
+    host.appendChild(particle);
+  }
+
+  host.hidden = false;
+  setTimeout(() => {
+    host.hidden = true;
+    host.querySelectorAll('.burst-particle').forEach((p) => p.remove());
+  }, 1800);
 }
 
 /* --------------------------------------------------------------- Ranglisten */
@@ -361,6 +528,8 @@ function renderTicker(s) {
 
 function render(s) {
   snapshot = s;
+  viewedDate = parseDayKeyLocal(s.date.key);
+  updateDateNavButtons();
 
   $('dateLabel').textContent = s.date.label;
   $('statusText').textContent = s.tracking ? 'SYSTEM ONLINE · LIVE' : 'AUFZEICHNUNG PAUSIERT';
@@ -397,7 +566,9 @@ function render(s) {
   renderDonut(s.today);
   renderWeek(s.last7);
   renderTrend(s.last14);
-  renderDay(s.hours);
+  renderDay(s.hours, s.date.isToday);
+
+  $('currentStrip').hidden = !s.date.isToday;
 
   // Aktueller Kontext
   const cur = s.current || {};
@@ -444,6 +615,9 @@ function render(s) {
   renderYoutube(s.youtube);
   renderSites(s.domains);
   renderTicker(s);
+
+  maybeCelebrateRecord(s);
+  renderWeekScore(s);
 }
 
 /* ------------------------------------------------------------- Chart-Hover */
@@ -535,8 +709,31 @@ function attachTrendHover() {
   });
 }
 
+/** Hover für den Tagesverlauf. Trefferfläche ist die ganze Stundenspalte,
+    nicht nur der gefüllte Teil — sonst trifft man leere Stunden nie. */
+function attachDayHover() {
+  const container = $('day');
+  container.addEventListener('mousemove', (e) => {
+    const cell = e.target.closest('.day-hour');
+    if (!cell || !lastDayHours.length) {
+      hideTooltip();
+      return;
+    }
+    const i = Number(cell.dataset.i);
+    for (const other of container.querySelectorAll('.day-hour')) {
+      other.classList.toggle('is-dim', other !== cell);
+    }
+    showTooltip(e.clientX, e.clientY, dayTooltipHtml(i, lastDayHours[i] || {}));
+  });
+  container.addEventListener('mouseleave', () => {
+    for (const cell of container.querySelectorAll('.day-hour')) cell.classList.remove('is-dim');
+    hideTooltip();
+  });
+}
+
 attachWeekHover();
 attachTrendHover();
+attachDayHover();
 
 /* ------------------------------------------------------- Einstufungs-Menü */
 
@@ -648,6 +845,16 @@ document.addEventListener('keydown', (e) => {
 /* ----------------------------------------------------------------- Buttons */
 
 $('btnToday').addEventListener('click', async () => render(await window.copilot.getSnapshot()));
+$('btnPrevDay').addEventListener('click', () => {
+  const prev = new Date(viewedDate);
+  prev.setDate(prev.getDate() - 1);
+  loadDay(prev);
+});
+$('btnNextDay').addEventListener('click', () => {
+  const next = new Date(viewedDate);
+  next.setDate(next.getDate() + 1);
+  loadDay(next);
+});
 $('btnTracking').addEventListener('click', async () => render(await window.copilot.toggleTracking()));
 
 /* -------------------------------------------------------------------- Boot */

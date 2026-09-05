@@ -7,7 +7,7 @@ const { contextBridge, ipcRenderer } = require('electron');
  * Der Renderer bekommt keinen Node-Zugriff — nur diese Funktionen.
  */
 contextBridge.exposeInMainWorld('copilot', {
-  getSnapshot: () => ipcRenderer.invoke('snapshot:get'),
+  getSnapshot: (dateKey) => ipcRenderer.invoke('snapshot:get', dateKey),
   onSnapshot: (handler) => {
     const listener = (_event, snapshot) => handler(snapshot);
     ipcRenderer.on('snapshot', listener);
@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('copilot', {
   setGoals: (goals) => ipcRenderer.invoke('goals:set', goals),
   setSettings: (settings) => ipcRenderer.invoke('settings:set', settings),
   toggleTracking: () => ipcRenderer.invoke('tracking:toggle'),
+  acknowledgeRecord: () => ipcRenderer.invoke('records:acknowledge'),
 
   closePanel: () => ipcRenderer.invoke('panel:close'),
   quitApp: () => ipcRenderer.invoke('app:quit'),

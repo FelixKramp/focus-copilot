@@ -95,7 +95,7 @@ const MEDIA_APPS = [
  * (Dock, Kontrollzentrum, Launcher-Helfer …). Ticks darauf werden verworfen.
  */
 const IGNORED_PROCESSES = [
-  'app_mode_loader', 'loginwindow', 'dock', 'systemuiserver', 'spotlight',
+  'loginwindow', 'dock', 'systemuiserver', 'spotlight',
   'controlcenter', 'control center', 'notificationcenter', 'notification center',
   'windowmanager', 'screensaverengine', 'coreservicesuiagent', 'universalaccessd',
   'textinputmenuagent', 'airplayuiagent', 'wallpaper', 'finder ', 'talagent',

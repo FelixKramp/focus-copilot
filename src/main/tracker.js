@@ -4,11 +4,10 @@ const EventEmitter = require('events');
 const { powerMonitor } = require('electron');
 const { getFrontmost, isMediaPlaying } = require('./monitor');
 const {
-  classify, domainFromUrl, youtubeIdFromUrl, isIgnoredProcess, BROWSERS,
+  classify, domainFromUrl, youtubeIdFromUrl, isIgnoredProcess,
 } = require('./classify');
 
 const TICK_SECONDS = 3;
-const BROWSER_SET = new Set(BROWSERS);
 
 /**
  * Der Tracker pollt im Sekundentakt, was gerade vorne ist, stuft es ein und
@@ -73,10 +72,9 @@ class Tracker extends EventEmitter {
     const ignored = isIgnoredProcess(front.app);
     if (ignored && idleSeconds < settings.idleThresholdSeconds) return;
 
-    const domain = domainFromUrl(front.url);
-    const isBrowser = BROWSER_SET.has(String(front.app).toLowerCase());
-    // Nur im Browser zählt die Domain; sonst die App selbst.
-    const ctxDomain = isBrowser ? domain : '';
+    // Domain zählt, wenn wir eine haben (Browser-Tab oder aufgelöste
+    // Website-Verknüpfung); sonst zählt die App selbst.
+    const ctxDomain = domainFromUrl(front.url);
 
     if (idleSeconds >= settings.idleThresholdSeconds) {
       // Läuft trotz Untätigkeit ein Video? Dann ist es Prokrastination.

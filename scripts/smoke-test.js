@@ -13,7 +13,7 @@ const path = require('path');
 const {
   classify, domainFromUrl, youtubeIdFromUrl, isIgnoredProcess,
 } = require('../src/main/classify');
-const { Store } = require('../src/main/store');
+const { Store, dayKey, emptyDay } = require('../src/main/store');
 const { buildSnapshot, focusScore } = require('../src/main/stats');
 
 let passed = 0;
@@ -67,7 +67,10 @@ check('Manuelle Einstufung schlägt die automatische', () => {
 });
 
 check('Hintergrund-Hilfsprozesse werden ignoriert', () => {
-  assert.strictEqual(isIgnoredProcess('app_mode_loader'), true);
+  // app_mode_loader ist KEIN Hilfsprozess, sondern der (irreführende) Prozess-
+  // name jeder "Als Fenster öffnen"-Website-Verknüpfung (z. B. YouTube als
+  // eigene App) — der wird in monitor.js aufgelöst, nicht verworfen.
+  assert.strictEqual(isIgnoredProcess('app_mode_loader'), false);
   assert.strictEqual(isIgnoredProcess('Dock'), true);
   assert.strictEqual(isIgnoredProcess('Control Center'), true);
   assert.strictEqual(isIgnoredProcess(''), true);
@@ -190,6 +193,92 @@ check('Bestehende Overrides greifen automatisch beim nächsten Start', () => {
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+console.log('\nHighscores');
+check('Der allererste erfasste Tag setzt die Baseline, ohne zu feiern', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+
+  s.record(600, 'productive', { app: 'Xcode' }); // Score 100 %, aber erster Tag
+
+  assert.strictEqual(s.data.records.bestDayScore.score, 100);
+  assert.strictEqual(s.data.records.bestWeekAvg.score, 100);
+  assert.strictEqual(s.data.pendingRecord, null, 'der allererste Tag feiert nicht');
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Ein geschlagener Tages-Rekord wird aktualisiert und als unbestätigt markiert', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  // Wochen-Bestwert schon am Maximum, damit nur der Tages-Rekord auslöst.
+  s.data.records.bestDayScore = { score: 50, key: '2026-01-01' };
+  s.data.records.bestWeekAvg = { score: 100, key: '2026-01-01' };
+
+  s.record(600, 'productive', { app: 'Xcode' }); // heutiger Score: 100 %
+
+  assert.strictEqual(s.data.records.bestDayScore.score, 100);
+  assert.strictEqual(s.data.records.bestDayScore.key, dayKey());
+  assert.ok(s.data.pendingRecord, 'ein Rekord muss als unbestätigt markiert sein');
+  assert.strictEqual(s.data.pendingRecord.type, 'day');
+  assert.strictEqual(s.data.pendingRecord.score, 100);
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('acknowledgeRecord() löscht den unbestätigten Rekord', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  s.data.records.bestDayScore = { score: 50, key: '2026-01-01' };
+  s.data.records.bestWeekAvg = { score: 100, key: '2026-01-01' };
+  s.record(600, 'productive', { app: 'Xcode' });
+  assert.ok(s.data.pendingRecord);
+
+  s.acknowledgeRecord();
+
+  assert.strictEqual(s.data.pendingRecord, null);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('setOverride() prüft Bestwerte erneut, statt auf den nächsten record() zu warten', () => {
+  // Deckt den Fall ab: Tracking pausiert (kein weiterer record()-Tick), Nutzer
+  // stuft eine App über das Kontextmenü um, und der Schub reißt den heutigen
+  // Score über den gespeicherten Tages-Rekord. Ohne checkRecords() in
+  // setOverride() bliebe der Bestwert bis zum nächsten Tick veraltet.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  s.data.records.bestDayScore = { score: 60, key: '2020-01-01' };
+  s.data.records.bestWeekAvg = { score: 100, key: '2020-01-01' }; // schon am Maximum, damit nur der Tages-Rekord auslöst
+
+  s.record(600, 'wasted', { app: 'Pianoteq 9' }); // heutiger Score: 0 % — unter dem Bestwert, löst noch nichts aus
+  assert.strictEqual(s.data.records.bestDayScore.score, 60, 'record() allein darf hier noch nichts ändern');
+  assert.strictEqual(s.data.pendingRecord, null);
+
+  s.setOverride('app:pianoteq 9', 'productive'); // schiebt die 600s rückwirkend auf Produktiv -> heutiger Score 100 %
+
+  assert.strictEqual(s.data.records.bestDayScore.score, 100, 'setOverride() muss den Bestwert selbst aktualisieren');
+  assert.strictEqual(s.data.records.bestDayScore.key, dayKey());
+  assert.ok(s.data.pendingRecord, 'ein Rekord muss als unbestätigt markiert sein');
+  assert.strictEqual(s.data.pendingRecord.type, 'day');
+  assert.strictEqual(s.data.pendingRecord.score, 100);
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Bestwerte und unbestätigter Rekord überleben Speichern und Neuladen', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  s.data.records.bestDayScore = { score: 50, key: '2026-01-01' };
+  s.data.records.bestWeekAvg = { score: 100, key: '2026-01-01' };
+  s.record(600, 'productive', { app: 'Xcode' });
+  s.flush();
+
+  const reloaded = new Store(dir);
+  assert.strictEqual(reloaded.data.records.bestDayScore.score, 100);
+  assert.ok(reloaded.data.pendingRecord, 'pendingRecord muss erhalten bleiben');
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 console.log('\nStatistik');
 check('Fokus-Score gewichtet neutral halb', () => {
   assert.strictEqual(focusScore({ productive: 0, neutral: 0, wasted: 0 }), 0);
@@ -197,6 +286,66 @@ check('Fokus-Score gewichtet neutral halb', () => {
   assert.strictEqual(focusScore({ productive: 0, neutral: 0, wasted: 100 }), 0);
   assert.strictEqual(focusScore({ productive: 50, neutral: 0, wasted: 50 }), 50);
   assert.strictEqual(focusScore({ productive: 0, neutral: 100, wasted: 0 }), 50);
+});
+
+check('buildSnapshot() zeigt einen vergangenen Tag, wenn dateKey übergeben wird', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yKey = dayKey(yesterday);
+  s.data.days[yKey] = { ...emptyDay(), productive: 900, total: 900 };
+  s.flush();
+
+  const past = buildSnapshot(s, { running: true, current: {} }, yKey);
+  assert.strictEqual(past.date.key, yKey);
+  assert.strictEqual(past.date.isToday, false);
+  assert.strictEqual(past.today.productive, 900);
+
+  const today = buildSnapshot(s, { running: true, current: {} });
+  assert.strictEqual(today.date.isToday, true);
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Snapshot enthält Wochen-Score und Highscores unabhängig vom angezeigten Tag', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  s.record(600, 'productive', { app: 'Xcode' }); // Score 100 % heute
+
+  const snap = buildSnapshot(s, { running: true, current: {} });
+  assert.strictEqual(snap.weekScore.avg, 100);
+  assert.strictEqual(snap.records.bestDayScore.score, 100);
+  assert.strictEqual(snap.pendingRecord, null);
+
+  // Felder, die an den echten heutigen Tag gebunden sein müssen (projection.wasted
+  // & Co.), dürfen sich nicht ändern, wenn ein vergangener Tag angezeigt wird.
+  const todayWasted = s.day().wasted; // 0 bislang — es wurde nur productive gebucht
+  const pastKey = '2020-01-01';
+  s.day(pastKey).wasted = 9999; // deutlich andere "wasted"-Sekunden als heute
+
+  const fakeTracker = { running: true, current: { app: 'Foo' } };
+  const pastSnap = buildSnapshot(s, fakeTracker, pastKey);
+
+  assert.strictEqual(pastSnap.date.key, pastKey);
+  assert.strictEqual(pastSnap.date.isToday, false);
+  assert.strictEqual(
+    pastSnap.projection.wasted.perDay,
+    todayWasted,
+    'projection.wasted muss an heute gebunden bleiben, nicht am angezeigten Tag',
+  );
+  assert.notStrictEqual(pastSnap.projection.wasted.perDay, 9999);
+
+  // current, tracking, last7/last14-Länge und der Streak hängen nicht vom
+  // angeforderten dateKey ab.
+  assert.strictEqual(pastSnap.current, fakeTracker.current);
+  assert.strictEqual(pastSnap.tracking, true);
+  assert.strictEqual(pastSnap.last7.length, 7);
+  assert.strictEqual(pastSnap.last14.length, 14);
+  assert.strictEqual(pastSnap.goals.streak, snap.goals.streak);
+
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 check('Snapshot enthält alles, was die Oberfläche braucht', () => {
