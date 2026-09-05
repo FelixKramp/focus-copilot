@@ -75,9 +75,20 @@ Tempo pro Woche, Monat, Jahr und Jahrzehnt bedeutet — in vollen Tagen.
 Nach 10 zusammenhängenden Minuten Prokrastination kommt eine Meldung, in
 wechselnden Formulierungen. Beim Erreichen des Tagesziels ebenfalls.
 
+**Score in der Menüleiste**
+Neben dem Icon stehen der aktuelle Fokus-Score und ein Pfeil, der zeigt, wohin
+er gerade wandert: `↑` steigt, `↓` fällt, `→` hält sich. Der Score ist ein
+gewichteter Anteil (produktiv zählt voll, neutral halb, Prokrastination gar
+nicht), die laufende Tätigkeit zieht ihn also auf ihr eigenes Gewicht zu —
+daraus ergibt sich die Richtung sofort. Deshalb kann dieselbe neutrale Tätigkeit
+je nach Stand nach oben oder unten zeigen: bei Score 30 hebt sie, bei Score 80
+senkt sie. Bist du nicht am Rechner oder ist das Tracking pausiert, steht kein
+Pfeil da — dann bewegt sich nichts. Abschaltbar per Rechtsklick auf das Icon,
+Punkt *Score in der Menüleiste*.
+
 **Menüleisten-Vorschau**
 Ein Klick auf das Icon in der Menüleiste klappt direkt darunter eine Vorschau
-auf: Fokus-Score, Gesamtzeit am Mac, produktive Zeit, Prokrastination, Zeit
+auf: Fokus-Score mit demselben Trendpfeil, Gesamtzeit am Mac, produktive Zeit, Prokrastination, Zeit
 nicht am PC, der Fortschritt zum Tagesziel, die meistgenutzte App des Tages
 und was gerade läuft. Dazu Schalter für Dashboard, Tracking pausieren und
 Beenden. Ein Klick daneben oder `Esc` schließt sie wieder.
@@ -119,6 +130,7 @@ damit man die Diagramme gefüllt sieht, ohne die echten Daten anzufassen.
 | `src/main/monitor.js` | AppleScript für aktive App/URL, Medien-Erkennung |
 | `src/main/classify.js` | Automatische Einstufung von Apps und Domains |
 | `src/main/store.js` | Persistenz (eine JSON-Datei, atomar geschrieben) |
+| `src/main/score.js` | Fokus-Score und die Richtung, in die er gerade wandert |
 | `src/main/stats.js` | Alle Kennzahlen für die Oberfläche |
 | `src/renderer/` | Dashboard und Menüleisten-Vorschau (kein Framework, SVG von Hand) |
 

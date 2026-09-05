@@ -82,6 +82,16 @@ body {
 }
 .pulse.is-paused { background: var(--idle); box-shadow: none; }
 
+/* Wohin der Score gerade wandert — derselbe Pfeil wie in der Menüleiste. */
+.trend {
+  font-family: var(--mono);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+  color: var(--muted-dim);
+}
+.trend:not(:empty)::before { content: '·'; margin: 0 5px 0 3px; color: var(--muted-dim); }
+.trend.is-up { color: var(--green); }
+.trend.is-down { color: var(--red); }
+
 /* ------------------------------------------------------------------ Zahlen */
 
 .stats {

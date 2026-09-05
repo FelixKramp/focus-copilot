@@ -11,6 +11,17 @@ const CAT_LABEL = {
   inactive: 'NICHT AM PC',
 };
 
+/**
+ * Wohin der Score gerade gezogen wird. 'flat' ist eine eigene Aussage — der
+ * Score hält sich —, kein fehlender Trend; nichts steht nur, wenn gerade
+ * überhaupt nichts einzahlt (abwesend oder Tracking pausiert).
+ */
+const TREND = {
+  up: { glyph: '\u2191', word: 'steigt' },
+  down: { glyph: '\u2193', word: 'fällt' },
+  flat: { glyph: '\u2192', word: 'hält' },
+};
+
 function fmt(seconds) {
   const min = Math.round((seconds || 0) / 60);
   if (min < 60) return `${min} Min`;
@@ -40,6 +51,12 @@ function render(s) {
   $('score').textContent = String(s.today.score);
 
   $('statusText').textContent = s.tracking ? 'System online' : 'Aufzeichnung pausiert';
+
+  const trend = TREND[s.today.trend];
+  const trendEl = $('trend');
+  trendEl.textContent = trend ? `${trend.glyph} ${trend.word}` : '';
+  trendEl.className = 'trend' + (s.today.trend ? ` is-${s.today.trend}` : '');
+
   $('statusDot').classList.toggle('is-paused', !s.tracking);
   $('btnTracking').textContent = s.tracking ? 'PAUSE' : 'START';
 

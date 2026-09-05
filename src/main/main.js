@@ -10,6 +10,7 @@ const {
 const { Store } = require('./store');
 const { Tracker } = require('./tracker');
 const { buildSnapshot } = require('./stats');
+const { focusScore, scoreTrend } = require('./score');
 const notifications = require('./notifications');
 
 const ASSETS = path.join(__dirname, '..', '..', 'assets');
@@ -181,6 +182,31 @@ function formatShort(seconds) {
   return `${Math.floor(m / 60)}h ${m % 60}m`;
 }
 
+/**
+ * Pfeil neben dem Score. 'flat' bekommt bewusst einen eigenen Pfeil: „hält sich"
+ * ist eine echte Aussage, kein fehlender Trend. Steht gar nichts an (abwesend
+ * oder Tracking pausiert), steht dort ein Leerzeichen, damit die Zahl nicht
+ * seitlich wandert.
+ */
+const TREND_GLYPH = { up: '\u2191', down: '\u2193', flat: '\u2192' };
+
+/**
+ * Score und Trendpfeil in die Menüleiste schreiben. Monospaced, damit die
+ * Menüleiste nicht bei jedem Ziffernwechsel springt.
+ */
+function refreshTrayTitle() {
+  if (!tray || !store || !tracker) return;
+
+  if (!store.data.settings.trayScore) {
+    tray.setTitle('');
+    return;
+  }
+
+  const day = store.day();
+  const trend = tracker.running ? scoreTrend(day, tracker.current.category) : null;
+  tray.setTitle(`${TREND_GLYPH[trend] || ' '} ${focusScore(day)}`, { fontType: 'monospaced' });
+}
+
 /** Klassisches Menü auf Rechtsklick — die Vorschau liegt auf dem Linksklick. */
 function trayContextMenu() {
   const running = tracker.running;
@@ -192,6 +218,16 @@ function trayContextMenu() {
       click: () => {
         if (tracker.running) tracker.stop(); else tracker.start();
         refreshTray();
+        pushSnapshot();
+      },
+    },
+    {
+      label: 'Score in der Menüleiste',
+      type: 'checkbox',
+      checked: store.data.settings.trayScore,
+      click: () => {
+        store.setSettings({ trayScore: !store.data.settings.trayScore });
+        refreshTrayTitle();
         pushSnapshot();
       },
     },
@@ -207,6 +243,7 @@ function refreshTray() {
     `Focus Co-Pilot — ${formatShort(day.productive)} produktiv, ` +
     `${formatShort(day.wasted)} Prokrastination`
   );
+  refreshTrayTitle();
 }
 
 function createTray() {
@@ -358,6 +395,9 @@ if (!app.requestSingleInstanceLock()) {
     let lastTrayRefresh = 0;
     tracker.on('update', () => {
       pushSnapshot();
+      // Der Titel ist billig und soll jeden Takt mitlaufen — er ist der Grund,
+      // warum man überhaupt hinschaut.
+      refreshTrayTitle();
       // Den Tooltip nur etwa einmal pro Minute neu setzen.
       const now = Date.now();
       if (now - lastTrayRefresh > 60000) {
