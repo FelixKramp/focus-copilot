@@ -7,7 +7,7 @@ const {
   app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, screen, shell, powerMonitor,
 } = require('electron');
 
-const { Store } = require('./store');
+const { Store, THEMES } = require('./store');
 const { Tracker } = require('./tracker');
 const { buildSnapshot } = require('./stats');
 const { focusScore, scoreTrend } = require('./score');
@@ -41,7 +41,7 @@ function createMainWindow() {
     minHeight: 700,
     show: false,
     title: 'Focus Co-Pilot',
-    backgroundColor: '#050d11',
+    backgroundColor: (THEMES[store.data.settings.theme] || THEMES.jarvis).background,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 14, y: 18 },
     webPreferences: {
@@ -231,9 +231,26 @@ function trayContextMenu() {
         pushSnapshot();
       },
     },
+    {
+      label: 'Design',
+      submenu: Object.entries(THEMES).map(([id, theme]) => ({
+        label: theme.label,
+        type: 'radio',
+        checked: store.data.settings.theme === id,
+        click: () => setTheme(id),
+      })),
+    },
     { type: 'separator' },
     { label: 'Focus Co-Pilot beenden', click: () => { quitting = true; app.quit(); } },
   ]);
+}
+
+/** Design wechseln — aus dem Menüleisten-Menü oder aus dem Dashboard. */
+function setTheme(id) {
+  if (!THEMES[id]) return;
+  store.setSettings({ theme: id });
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setBackgroundColor(THEMES[id].background);
+  pushSnapshot();
 }
 
 function refreshTray() {
@@ -342,6 +359,11 @@ function registerIpc() {
   });
 
   ipcMain.handle('settings:set', (_e, settings) => {
+    if (settings && 'theme' in settings) {
+      const { theme, ...rest } = settings;
+      setTheme(theme);
+      settings = rest;
+    }
     store.setSettings(settings);
     return buildSnapshot(store, tracker, viewedDateKey || undefined);
   });

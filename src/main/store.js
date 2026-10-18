@@ -26,6 +26,14 @@ const DEFAULT_SETTINGS = {
   idleThresholdSeconds: 60,
   // Score und Trendpfeil neben dem Menueleisten-Icon.
   trayScore: true,
+  theme: 'jarvis',
+};
+
+/** Die Designs zur Auswahl, mit der Fensterfarbe, die vor dem ersten
+    Zeichnen sichtbar ist (sonst blitzt beim Öffnen das falsche Theme auf). */
+const THEMES = {
+  jarvis: { label: 'JARVIS', background: '#050d11' },
+  mischpult: { label: 'Mischpult', background: '#141312' },
 };
 
 function defaultRecords() {
@@ -351,7 +359,9 @@ class Store {
   }
 
   setSettings(settings) {
-    this.data.settings = { ...this.data.settings, ...settings };
+    const next = { ...settings };
+    if ('theme' in next && !THEMES[next.theme]) delete next.theme;
+    this.data.settings = { ...this.data.settings, ...next };
     this.flush();
   }
 
@@ -428,5 +438,5 @@ function parseDayKey(key) {
 }
 
 module.exports = {
-  Store, dayKey, parseDayKey, emptyDay, DAY_START_HOUR, DEFAULT_GOALS, DEFAULT_SETTINGS,
+  Store, dayKey, parseDayKey, emptyDay, DAY_START_HOUR, DEFAULT_GOALS, DEFAULT_SETTINGS, THEMES,
 };

@@ -9,7 +9,7 @@
  * App und ihre data.json bleiben unberührt.
  *
  *   npx electron scripts/preview.js [--out datei.png] [--clip #day] [--date 2026-08-14]
- *                                   [--hover <selektor>] [--click <selektor>]
+ *                                   [--hover <selektor>] [--click <selektor>] [--theme mischpult]
  */
 
 const { app, BrowserWindow } = require('electron');
@@ -51,6 +51,9 @@ app.whenReady().then(async () => {
   // Der Tracker wird nur für zwei Felder gebraucht; ein Stub reicht.
   const tracker = { running: true, current: null };
   const snapshot = buildSnapshot(store, tracker, DATE || undefined);
+  // --theme <id>: Design für die Vorschau, unabhängig von der Einstellung.
+  const THEME = arg('theme', '');
+  if (THEME) snapshot.settings = { ...snapshot.settings, theme: THEME };
 
   const stub = path.join(dir, 'preview-preload.js');
   fs.writeFileSync(
@@ -80,7 +83,9 @@ app.whenReady().then(async () => {
     webPreferences: { preload: stub, contextIsolation: true, nodeIntegration: false },
   });
 
-  await win.loadFile(path.join(__dirname, '../src/renderer/index.html'));
+  // --page panel: die Menüleisten-Vorschau statt des Dashboards.
+  const PAGE = arg('page', 'index');
+  await win.loadFile(path.join(__dirname, `../src/renderer/${PAGE}.html`));
   // Dem Renderer Zeit geben, den Snapshot zu zeichnen.
   await new Promise((r) => setTimeout(r, 1200));
 
@@ -121,6 +126,19 @@ app.whenReady().then(async () => {
     );
     console.log(`  click ${CLICK}: ${ok ? 'geklickt' : 'NICHT GEFUNDEN'}`);
     await new Promise((r) => setTimeout(r, 300));
+  }
+
+  // --dump <ordner>: gerenderte Seite als statisches HTML samt CSS ablegen,
+  // z. B. für einen Prüfer, der die Seite ohne Electron-Brücke öffnen muss.
+  const DUMP = arg('dump', '');
+  if (DUMP) {
+    const html = await win.webContents.executeJavaScript(
+      `'<!doctype html>' + document.documentElement.outerHTML.replace(/<script[\\s\\S]*?<\\/script>/g, '')`,
+    );
+    fs.mkdirSync(DUMP, { recursive: true });
+    fs.writeFileSync(path.join(DUMP, 'index.html'), html);
+    fs.copyFileSync(path.join(__dirname, '../src/renderer/dashboard.css'), path.join(DUMP, 'dashboard.css'));
+    console.log(`  dump: ${DUMP}/index.html`);
   }
 
   let rect;

@@ -96,10 +96,10 @@ function pct(value) {
 }
 
 const CAT_LABEL = {
-  productive: 'PRODUKTIV',
-  neutral: 'NEUTRAL',
-  wasted: 'PROKRASTINATION',
-  inactive: 'NICHT AM PC',
+  productive: 'Produktiv',
+  neutral: 'Neutral',
+  wasted: 'Prokrastination',
+  inactive: 'Nicht am PC',
 };
 
 /* ---------------------------------------------------------------- Diagramme */
@@ -111,6 +111,52 @@ function renderGauge(score) {
   ring.style.strokeDasharray = String(circumference);
   ring.style.strokeDashoffset = String(circumference * (1 - Math.min(1, score / 100)));
   $('scoreValue').textContent = String(score);
+  renderLeds(score);
+}
+
+/**
+ * Score als LED-Pegel (nur im Mischpult sichtbar). 20 Zellen à 5 %, von unten
+ * nach oben; die Zonen sind fest, damit man am Pegel ablesen kann, ob der Tag
+ * im roten, gelben oder grünen Bereich läuft — wie die Aussteuerung am Pult.
+ */
+const LED_COUNT = 20;
+const LED_ZONES = [{ until: 8, cls: 'zone-low' }, { until: 14, cls: 'zone-mid' }, { until: LED_COUNT, cls: 'zone-high' }];
+
+function renderLeds(score) {
+  const host = $('ledMeter');
+  if (!host.children.length) {
+    for (let i = 0; i < LED_COUNT; i++) {
+      const led = document.createElement('i');
+      led.className = `led ${LED_ZONES.find((z) => i < z.until).cls}`;
+      led.style.setProperty('--i', String(i));
+      host.appendChild(led);
+    }
+  }
+  const lit = Math.round((Math.max(0, Math.min(100, score)) / 100) * LED_COUNT);
+  Array.from(host.children).forEach((led, i) => led.classList.toggle('is-lit', i < lit));
+}
+
+/* ------------------------------------------------------------------ Design */
+
+const THEMES = ['jarvis', 'mischpult'];
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+/** Setzt das Design. Beim ersten Snapshot sofort, danach als Überblendung. */
+function applyTheme(name) {
+  const theme = THEMES.includes(name) ? name : 'jarvis';
+  const root = document.documentElement;
+  if (root.dataset.theme === theme) return;
+  const swap = () => {
+    root.dataset.theme = theme;
+    for (const btn of $('themeMenu').querySelectorAll('[data-theme]')) {
+      btn.setAttribute('aria-checked', String(btn.dataset.theme === theme));
+    }
+  };
+  if (root.dataset.theme && document.startViewTransition && !reducedMotion.matches) {
+    document.startViewTransition(swap);
+  } else {
+    swap();
+  }
 }
 
 function renderDonut(today) {
@@ -119,7 +165,7 @@ function renderDonut(today) {
   const total = today.productive + today.neutral + today.wasted;
   const segments = [
     { value: today.productive, color: 'var(--green)' },
-    { value: today.neutral, color: 'var(--cyan)' },
+    { value: today.neutral, color: 'var(--neutral)' },
     { value: today.wasted, color: 'var(--red)' },
   ];
 
@@ -131,7 +177,7 @@ function renderDonut(today) {
       const el =
         `<circle cx="100" cy="100" r="${r}" fill="none" stroke="${s.color}" stroke-width="13" ` +
         `stroke-dasharray="${length} ${circumference - length}" stroke-dashoffset="${-offset}" ` +
-        `style="filter:drop-shadow(0 0 5px ${s.color})" />`;
+        `class="donut-arc" style="--c:${s.color}" />`;
       offset += length;
       return el;
     })
@@ -168,7 +214,7 @@ function renderWeek(days) {
     svg += `<g class="bar-group" data-i="${i}">`;
     const stack = [
       { v: d.productive, c: 'var(--green)' },
-      { v: d.neutral, c: 'var(--cyan)' },
+      { v: d.neutral, c: 'var(--neutral)' },
       { v: d.wasted, c: 'var(--red)' },
     ];
     for (const part of stack) {
@@ -179,7 +225,7 @@ function renderWeek(days) {
     }
 
     if (d.goalReached) {
-      svg += `<circle cx="${cx}" cy="${y - 7}" r="2.6" fill="var(--green)" style="filter:drop-shadow(0 0 4px var(--green))" />`;
+      svg += `<circle cx="${cx}" cy="${y - 7}" r="2.6" class="goal-dot" />`;
     }
     svg += `<text x="${cx}" y="${H - 7}" text-anchor="middle" class="axis-label">${d.label}</text>`;
     // Unsichtbare, großzügige Trefferfläche über die ganze Spalte — sonst
@@ -221,8 +267,8 @@ function renderTrend(points) {
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
   svg += `<defs><linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="rgba(34,211,238,0.22)" />
-            <stop offset="100%" stop-color="rgba(34,211,238,0)" />
+            <stop offset="0%" style="stop-color: var(--trend-fill)" />
+            <stop offset="100%" style="stop-color: var(--trend-fill); stop-opacity: 0" />
           </linearGradient></defs>`;
 
   // Waagerechte Hilfslinien bei 0 / 50 / 100.
@@ -399,8 +445,8 @@ function appIconRow(row, appName) {
 function renderHourDetail() {
   const box = $('dayDetail');
   if (selectedHour === null || !snapshot) {
+    // Inhalt stehen lassen, damit er beim Zuklappen sichtbar mit schrumpft.
     box.hidden = true;
-    box.innerHTML = '';
     lastDetailSignature = '';
     return;
   }
@@ -452,6 +498,7 @@ function renderHourDetail() {
         ? '<img class="rank-icon" alt="" />'
         : `<img class="rank-icon" alt="" src="https://icons.duckduckgo.com/ip3/${encodeURIComponent(item.name)}.ico" onerror="this.style.visibility='hidden'" />`,
     });
+    row.style.setProperty('--i', String(list.children.length));
     list.appendChild(row);
     if (isApp) appIconRow(row, item.name);
   }
@@ -474,7 +521,14 @@ function renderHourDetail() {
 }
 
 function selectHour(i) {
+  const opening = selectedHour !== i;
   selectedHour = selectedHour === i ? null : i;
+  // Nur beim Öffnen bzw. Wechseln der Stunde staffeln — der Live-Push alle
+  // drei Sekunden zeichnet die Liste der laufenden Stunde sonst jedes Mal neu
+  // ein und sie würde ständig nachwippen.
+  $('dayDetail').classList.toggle('is-opening', opening && selectedHour !== null);
+  clearTimeout(selectHour.timer);
+  selectHour.timer = setTimeout(() => $('dayDetail').classList.remove('is-opening'), 500);
   selectedDayKey = selectedHour === null ? null : snapshot.date.key;
   for (const cell of $('day').querySelectorAll('.day-hour')) {
     cell.classList.toggle('is-selected', Number(cell.dataset.i) === selectedHour);
@@ -518,7 +572,7 @@ async function maybeCelebrateRecord(s) {
 function playRecordBurst({ type }) {
   const host = $('recordBurst');
   const text = $('recordBurstText');
-  text.textContent = type === 'week' ? 'NEUE BESTE WOCHE' : 'NEUER REKORD';
+  text.textContent = type === 'week' ? 'Neue beste Woche' : 'Neuer Rekord';
 
   host.querySelectorAll('.burst-particle').forEach((p) => p.remove());
 
@@ -664,13 +718,14 @@ function renderTicker(s) {
 
 function render(s) {
   snapshot = s;
+  applyTheme(s.settings && s.settings.theme);
   viewedDate = parseDayKeyLocal(s.date.key);
   updateDateNavButtons();
 
   $('dateLabel').textContent = s.date.label;
-  $('statusText').textContent = s.tracking ? 'SYSTEM ONLINE · LIVE' : 'AUFZEICHNUNG PAUSIERT';
+  $('statusText').textContent = s.tracking ? 'System online · live' : 'Aufzeichnung pausiert';
   $('statusDot').classList.toggle('is-paused', !s.tracking);
-  $('btnTracking').textContent = s.tracking ? 'PAUSE' : 'START';
+  $('btnTracking').textContent = s.tracking ? 'Pause' : 'Start';
 
   renderGauge(s.today.score);
   $('legProductive').textContent = fmt(s.today.productive);
@@ -723,7 +778,7 @@ function render(s) {
   $('currentName').textContent = label;
   const pill = $('currentPill');
   const cat = cur.idle ? 'inactive' : (cur.category || 'neutral');
-  pill.textContent = CAT_LABEL[cat] || 'NEUTRAL';
+  pill.textContent = CAT_LABEL[cat] || 'Neutral';
   pill.className = 'pill is-' + (cat === 'inactive' ? 'idle' : cat);
 
   const icon = $('currentIcon');
@@ -911,6 +966,37 @@ function closeCtx() {
   ctxKey = null;
 }
 
+const themeMenu = $('themeMenu');
+
+function closeThemeMenu() {
+  if (themeMenu.hidden) return;
+  themeMenu.hidden = true;
+  $('btnTheme').setAttribute('aria-expanded', 'false');
+}
+
+$('btnTheme').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!themeMenu.hidden) { closeThemeMenu(); return; }
+  closeCtx();
+  // Unter dem Knopf, rechtsbündig, innerhalb des Fensters.
+  const r = e.currentTarget.getBoundingClientRect();
+  themeMenu.hidden = false;
+  const w = themeMenu.getBoundingClientRect().width;
+  themeMenu.style.left = `${Math.max(8, Math.min(r.right - w, window.innerWidth - w - 12))}px`;
+  themeMenu.style.top = `${r.bottom + 6}px`;
+  e.currentTarget.setAttribute('aria-expanded', 'true');
+  const current = themeMenu.querySelector('[aria-checked="true"]');
+  if (current) current.focus();
+});
+
+themeMenu.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-theme]');
+  if (!btn) return;
+  e.stopPropagation();
+  closeThemeMenu();
+  render(await window.copilot.setSettings({ theme: btn.dataset.theme }));
+});
+
 document.addEventListener('click', (e) => {
   const row = e.target.closest('.rank');
   if (row && row.dataset.key) {
@@ -922,7 +1008,7 @@ document.addEventListener('click', (e) => {
     window.copilot.openLink(row.dataset.url);
     return;
   }
-  if (!e.target.closest('.ctx')) closeCtx();
+  if (!e.target.closest('.ctx')) { closeCtx(); closeThemeMenu(); }
 });
 
 ctxMenu.addEventListener('click', async (e) => {
@@ -992,7 +1078,7 @@ $('goalsOverlay').addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { $('goalsOverlay').hidden = true; closeCtx(); }
+  if (e.key === 'Escape') { $('goalsOverlay').hidden = true; closeCtx(); closeThemeMenu(); }
 });
 
 /* ----------------------------------------------------------------- Buttons */

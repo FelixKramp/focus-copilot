@@ -573,6 +573,20 @@ check('Umstieg: ein laufender Tag ohne Nachtstunden bekommt den 4-Uhr-Start', ()
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+check('Design: Standard ist JARVIS, nur bekannte Designs werden gespeichert', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  assert.strictEqual(s.data.settings.theme, 'jarvis');
+  s.setSettings({ theme: 'mischpult' });
+  assert.strictEqual(s.data.settings.theme, 'mischpult');
+  s.setSettings({ theme: 'gibtsnicht', trayScore: false });
+  assert.strictEqual(s.data.settings.theme, 'mischpult', 'unbekanntes Design wird ignoriert');
+  assert.strictEqual(s.data.settings.trayScore, false, 'andere Einstellungen gehen trotzdem durch');
+  assert.strictEqual(new Store(dir).data.settings.theme, 'mischpult', 'übersteht einen Neustart');
+  assert.strictEqual(buildSnapshot(s, { running: true, current: {} }).settings.theme, 'mischpult');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 fs.rmSync(tmp, { recursive: true, force: true });
 
 console.log(`\n${passed} Prüfungen bestanden.${process.exitCode ? ' ES GAB FEHLER.' : ''}\n`);

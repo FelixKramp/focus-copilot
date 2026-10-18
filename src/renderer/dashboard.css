@@ -31,6 +31,80 @@
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
 
   --radius: 6px;
+
+  /* Rollen statt fester Farben, damit ein Theme sie umstellen kann (siehe
+     Mischpult unten). Die Werte hier sind der JARVIS-Look, unverändert. */
+  --accent: var(--cyan);          /* Bedienelemente, Auswahl, Ring */
+  --neutral: var(--cyan);         /* Kategorie "neutral" in Daten */
+  --heading: var(--cyan);
+  --text-strong: #eafcff;
+  --topbar-bg: #050f14;
+  --backdrop:
+    radial-gradient(120% 80% at 50% 8%, rgba(34, 211, 238, 0.10), transparent 58%), /* taste-skill-ignore: JARVIS-Look, bewusst */
+    radial-gradient(90% 60% at 50% 105%, rgba(34, 197, 94, 0.09), transparent 62%), /* taste-skill-ignore: JARVIS-Look, bewusst */
+    linear-gradient(180deg, #061218 0%, #040e13 46%, #030a0d 100%); /* taste-skill-ignore: JARVIS-Look, bewusst */
+  --control-bg: rgba(8, 26, 34, 0.7);
+  --datepill-bg: rgba(8, 24, 31, 0.6);
+  --sunk: rgba(8, 24, 31, 0.5);
+  --hover: rgba(34, 211, 238, 0.06);
+  --hover-strong: rgba(34, 211, 238, 0.1);
+  --icon-bg: rgba(34, 211, 238, 0.1);
+  --ring-track: rgba(34, 211, 238, 0.10);
+  --ring-inner: rgba(34, 211, 238, 0.14);
+  --meter-track: rgba(34, 211, 238, 0.08);
+  --range-track: rgba(34, 211, 238, 0.14);
+  --day-track: rgba(100, 116, 139, 0.09);
+  --track-swatch: rgba(100, 116, 139, 0.14);
+  --track-swatch-edge: rgba(100, 116, 139, 0.4);
+  --now-ring: inset 0 0 0 1px rgba(34, 211, 238, 0.28);
+  --selected-ring: inset 0 0 0 1px var(--cyan), 0 0 8px rgba(34, 211, 238, 0.35);
+  --grid: rgba(34, 211, 238, 0.07);
+  --rule: rgba(45, 212, 191, 0.07);
+  --trend-line: #cbeaf3;
+  --trend-fill: rgba(34, 211, 238, 0.22);
+  --fill-productive: linear-gradient(90deg, var(--green), var(--green-bright)); /* taste-skill-ignore: JARVIS-Look, bewusst */
+  --fill-wasted: linear-gradient(90deg, var(--red-dim), var(--red)); /* taste-skill-ignore: JARVIS-Look, bewusst */
+  --ticker-bg: rgba(4, 14, 18, 0.9);
+  --scrim: rgba(2, 8, 11, 0.86);
+  --modal-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 60px rgba(34, 211, 238, 0.08);
+  --preset-bg: rgba(34, 211, 238, 0.05);
+  --scroll-thumb: rgba(34, 211, 238, 0.14);
+  --scroll-thumb-hover: rgba(34, 211, 238, 0.26);
+
+  --btn-accent-text: var(--green);
+  --btn-accent-bg: var(--control-bg);
+  --btn-accent-border: rgba(34, 197, 94, 0.4);
+  --btn-accent-hover-text: #86efac;
+  --btn-accent-hover-bg: rgba(34, 197, 94, 0.1);
+  --btn-accent-hover-border: var(--green);
+
+  --pill-productive: var(--green);  --pill-productive-bg: rgba(34, 197, 94, 0.08);  --pill-productive-edge: rgba(34, 197, 94, 0.45);
+  --pill-neutral: var(--cyan);      --pill-neutral-bg: rgba(34, 211, 238, 0.07);    --pill-neutral-edge: rgba(34, 211, 238, 0.4);
+  --pill-wasted: var(--red);        --pill-wasted-bg: rgba(255, 45, 85, 0.08);      --pill-wasted-edge: rgba(255, 45, 85, 0.45);
+  --pill-idle-edge: rgba(100, 116, 139, 0.4);
+
+  /* Leuchten. Ein Theme ohne Glow setzt sie alle auf none. */
+  --glow-brand-ring: 0 0 12px rgba(34, 211, 238, 0.5), inset 0 0 8px rgba(34, 211, 238, 0.3);
+  --glow-brand-core: 0 0 8px var(--cyan);
+  --glow-pulse: 0 0 8px var(--green);
+  --glow-accent-sm: 0 0 6px var(--cyan);
+  --glow-strip: 0 0 6px rgba(34, 211, 238, 0.6);
+  --glow-productive: 0 0 6px rgba(34, 197, 94, 0.7);
+  --glow-neutral: 0 0 6px rgba(34, 211, 238, 0.6);
+  --glow-wasted: 0 0 6px rgba(255, 45, 85, 0.7);
+  --glow-bar-productive: 0 0 10px rgba(34, 197, 94, 0.6);
+  --glow-bar-wasted: 0 0 10px rgba(255, 45, 85, 0.5);
+  --glow-fresh: 0 0 10px rgba(34, 197, 94, 0.35);
+  --glow-thumb: 0 0 12px rgba(34, 211, 238, 0.8);
+  --text-glow-productive: 0 0 14px rgba(34, 197, 94, 0.4);
+  --text-glow-wasted: 0 0 14px rgba(255, 45, 85, 0.35);
+  --text-glow-wasted-lg: 0 0 18px rgba(255, 45, 85, 0.45);
+  --text-glow-burst: 0 0 16px rgba(34, 197, 94, 0.8);
+
+  /* JARVIS setzt Überschriften und Labels in gesperrte Versalien. Im Markup
+     stehen sie in normaler Schreibweise; tracking multipliziert die Sperrung. */
+  --label-case: uppercase;
+  --tracking: 1;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -44,6 +118,8 @@ body {
   font-size: 14px;
   line-height: 1.5;
   overflow-x: hidden;
+  /* Zahlen ändern sich live — gleich breite Ziffern, damit nichts springt. */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   /* Das ist eine App-Oberfläche, kein Fließtext — markierbare Labels und
@@ -61,10 +137,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background:
-    radial-gradient(120% 80% at 50% 8%, rgba(34, 211, 238, 0.10), transparent 58%),
-    radial-gradient(90% 60% at 50% 105%, rgba(34, 197, 94, 0.09), transparent 62%),
-    linear-gradient(180deg, #061218 0%, #040e13 46%, #030a0d 100%);
+  background: var(--backdrop);
 }
 
 /* ------------------------------------------------------------------ Topbar */
@@ -78,7 +151,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   justify-content: space-between;
   gap: 16px;
   padding: 14px 22px 12px 92px; /* Platz für die Ampel-Buttons */
-  background: #050f14;
+  background: var(--topbar-bg);
   border-bottom: 1px solid var(--line);
   -webkit-app-region: drag;
 }
@@ -92,26 +165,28 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   border: 1.5px solid var(--cyan);
   border-radius: 50%;
   position: relative;
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.5), inset 0 0 8px rgba(34, 211, 238, 0.3);
+  box-shadow: var(--glow-brand-ring);
 }
 .brand-mark::after {
   content: "";
   position: absolute; inset: 5px;
   border-radius: 50%;
   background: var(--cyan);
-  box-shadow: 0 0 8px var(--cyan);
+  box-shadow: var(--glow-brand-core);
 }
 
 .brand-text h1 {
   font-size: 16px;
   font-weight: 700;
-  letter-spacing: 0.2em;
-  color: #eafcff;
+  letter-spacing: calc(0.2em * var(--tracking));
+  text-transform: var(--label-case);
+  color: var(--text-strong);
 }
 .brand-text p {
   margin-top: 3px;
   font-size: 10px;
-  letter-spacing: 0.16em;
+  letter-spacing: calc(0.16em * var(--tracking));
+  text-transform: var(--label-case);
   color: var(--muted);
   display: flex; align-items: center; gap: 6px;
 }
@@ -119,7 +194,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .pulse {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 8px var(--green);
+  box-shadow: var(--glow-pulse);
   animation: pulse 2.4s ease-in-out infinite;
 }
 .pulse.is-paused { background: var(--idle); box-shadow: none; animation: none; }
@@ -136,7 +211,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   font-size: 11px;
   letter-spacing: 0.1em;
   color: var(--muted);
-  background: rgba(8, 24, 31, 0.6);
+  background: var(--datepill-bg);
 }
 .datepill .chev {
   color: var(--muted-dim);
@@ -147,7 +222,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   padding: 2px 4px;
   transition: color 0.15s;
 }
-.datepill .chev:hover:not(:disabled) { color: var(--cyan); }
+.datepill .chev:hover:not(:disabled) { color: var(--accent); }
 .datepill .chev:disabled { opacity: 0.35; cursor: default; }
 
 .btn {
@@ -155,17 +230,18 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   font-family: var(--sans);
   font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: calc(0.14em * var(--tracking));
+  text-transform: var(--label-case);
   color: var(--muted);
-  background: rgba(8, 26, 34, 0.7);
+  background: var(--control-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
-.btn:hover { color: var(--cyan); border-color: var(--line-strong); }
-.btn-accent { color: var(--green); border-color: rgba(34, 197, 94, 0.4); }
-.btn-accent:hover { color: #86efac; border-color: var(--green); background: rgba(34, 197, 94, 0.1); }
+.btn:hover { color: var(--accent); border-color: var(--line-strong); }
+.btn-accent { color: var(--btn-accent-text); background: var(--btn-accent-bg); border-color: var(--btn-accent-border); }
+.btn-accent:hover { color: var(--btn-accent-hover-text); border-color: var(--btn-accent-hover-border); background: var(--btn-accent-hover-bg); }
 
 /* -------------------------------------------------------------------- Grid */
 
@@ -221,19 +297,20 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .card-head h2 {
   font-size: 10.5px;
   font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--cyan);
+  letter-spacing: calc(0.16em * var(--tracking));
+  text-transform: var(--label-case);
+  color: var(--heading);
   display: flex; align-items: center; gap: 7px;
 }
 .card-head h2::before {
   content: "";
   width: 4px; height: 4px;
   background: var(--cyan);
-  box-shadow: 0 0 6px var(--cyan);
+  box-shadow: var(--glow-accent-sm);
 }
 .card-sub {
   font-size: 10px;
-  letter-spacing: 0.12em;
+  letter-spacing: calc(0.12em * var(--tracking));
   color: var(--muted-dim);
   white-space: nowrap;
 }
@@ -256,19 +333,19 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 
 .gauge-track {
   fill: none;
-  stroke: rgba(34, 211, 238, 0.10);
+  stroke: var(--ring-track);
   stroke-width: 10;
 }
 .gauge-value {
   fill: none;
-  stroke: var(--cyan);
+  stroke: var(--accent);
   stroke-width: 10;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .gauge-inner {
   fill: none;
-  stroke: rgba(34, 211, 238, 0.14);
+  stroke: var(--ring-inner);
   stroke-width: 1;
   stroke-dasharray: 3 7;
 }
@@ -279,7 +356,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   font-family: var(--mono);
   white-space: nowrap; /* sonst rutscht die Einheit unter die Zahl */
 }
-.gauge-label strong { font-size: 30px; font-weight: 600; color: #eafcff; }
+.gauge-label strong { font-size: 30px; font-weight: 600; color: var(--text-strong); }
 .gauge--sm .gauge-label strong { font-size: 20px; }
 /* Die Einheit sitzt neben der Zahl, leicht abgesetzt wie auf einer Grundlinie. */
 .gauge-label span { font-size: 13px; color: var(--muted); margin-top: 11px; }
@@ -296,13 +373,13 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .legend--sm li { font-size: 11px; }
 
 .dot { width: 7px; height: 7px; border-radius: 2px; flex: none; }
-.dot-productive { background: var(--green); box-shadow: 0 0 6px rgba(34, 197, 94, 0.7); }
-.dot-neutral { background: var(--cyan); box-shadow: 0 0 6px rgba(34, 211, 238, 0.6); }
-.dot-wasted { background: var(--red); box-shadow: 0 0 6px rgba(255, 45, 85, 0.7); }
+.dot-productive { background: var(--green); box-shadow: var(--glow-productive); }
+.dot-neutral { background: var(--neutral); box-shadow: var(--glow-neutral); }
+.dot-wasted { background: var(--red); box-shadow: var(--glow-wasted); }
 .dot-idle { background: var(--idle); }
 /* Zeigt die leere Spur, nicht eine Füllfarbe — sonst verspricht die
    Legende einen grauen Balken, den es nicht mehr gibt. */
-.dot-track { background: rgba(100, 116, 139, 0.14); box-shadow: inset 0 0 0 1px rgba(100, 116, 139, 0.4); }
+.dot-track { background: var(--track-swatch); box-shadow: inset 0 0 0 1px var(--track-swatch-edge); }
 
 /* ------------------------------------------------------------ Heute-Karte */
 
@@ -315,7 +392,8 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .stat label {
   display: block;
   font-size: 9.5px;
-  letter-spacing: 0.13em;
+  letter-spacing: calc(0.13em * var(--tracking));
+  text-transform: var(--label-case);
   color: var(--muted-dim);
   margin-bottom: 6px;
 }
@@ -323,11 +401,11 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   font-family: var(--mono);
   font-size: 22px;
   font-weight: 600;
-  color: #eafcff;
+  color: var(--text-strong);
   letter-spacing: -0.01em;
 }
-.stat .is-productive { color: var(--green-bright); text-shadow: 0 0 14px rgba(34, 197, 94, 0.4); }
-.stat .is-wasted { color: var(--red); text-shadow: 0 0 14px rgba(255, 45, 85, 0.35); }
+.stat .is-productive { color: var(--green-bright); text-shadow: var(--text-glow-productive); }
+.stat .is-wasted { color: var(--red); text-shadow: var(--text-glow-wasted); }
 .stat .is-idle { color: var(--idle); }
 
 .meters { display: flex; flex-direction: column; gap: 10px; }
@@ -339,13 +417,13 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 
 .bar {
   height: 4px;
-  background: rgba(34, 211, 238, 0.08);
+  background: var(--meter-track);
   border-radius: 2px;
   overflow: hidden;
 }
 .bar-fill { display: block; height: 100%; border-radius: 2px; transition: width 0.5s ease; }
-.bar-productive { background: linear-gradient(90deg, var(--green), var(--green-bright)); box-shadow: 0 0 10px rgba(34, 197, 94, 0.6); }
-.bar-wasted { background: linear-gradient(90deg, var(--red-dim), var(--red)); box-shadow: 0 0 10px rgba(255, 45, 85, 0.5); }
+.bar-productive { background: var(--fill-productive); box-shadow: var(--glow-bar-productive); }
+.bar-wasted { background: var(--fill-wasted); box-shadow: var(--glow-bar-wasted); }
 
 /* ------------------------------------------------------------- Diagramme */
 
@@ -391,19 +469,19 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   flex-direction: column-reverse;
   gap: 2px;
   border-radius: 3px;
-  background: rgba(100, 116, 139, 0.09);
+  background: var(--day-track);
   overflow: hidden;
 }
 
 .seg { display: block; width: 100%; border-radius: 2px; flex: none; }
 .seg-productive { background: var(--green); }
-.seg-neutral { background: var(--cyan); }
+.seg-neutral { background: var(--neutral); }
 .seg-wasted { background: var(--red); }
 
 /* Die laufende Stunde bekommt einen dezenten Rahmen statt einer Füllung —
    sie ist ja noch unvollständig und soll nicht wie ein Ausreisser wirken. */
 .day-hour.is-now .day-track {
-  box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.28);
+  box-shadow: var(--now-ring);
 }
 
 .day-hour.is-dim { opacity: 0.4; }
@@ -414,7 +492,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .day-hour.is-empty { cursor: default; }
 .day-hour.is-selected { opacity: 1; }
 .day-hour.is-selected .day-track {
-  box-shadow: inset 0 0 0 1px var(--cyan), 0 0 8px rgba(34, 211, 238, 0.35);
+  box-shadow: var(--selected-ring);
 }
 
 /* Aufschlüsselung der angeklickten Stunde unter der Grafik. */
@@ -439,7 +517,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   font-size: 15px; line-height: 1; color: var(--muted-dim);
   cursor: pointer;
 }
-.day-detail-close:hover { color: var(--cyan); }
+.day-detail-close:hover { color: var(--accent); }
 .day-detail .empty { padding: 10px 6px; }
 .day-detail-note {
   padding: 6px 6px 0;
@@ -465,14 +543,15 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .chart-legend { display: flex; gap: 14px; }
 .chart-legend span {
   display: flex; align-items: center; gap: 5px;
-  font-size: 9.5px; letter-spacing: 0.11em; color: var(--muted-dim);
+  font-size: 9.5px; letter-spacing: calc(0.11em * var(--tracking));
+  text-transform: var(--label-case); color: var(--muted-dim);
 }
 
-.axis-label { font-family: var(--mono); font-size: 9px; fill: var(--muted-dim); letter-spacing: 0.1em; }
-.grid-line { stroke: rgba(34, 211, 238, 0.07); stroke-width: 1; }
-.trend-line { fill: none; stroke: #cbeaf3; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.axis-label { font-family: var(--mono); font-size: 9px; fill: var(--muted-dim); letter-spacing: calc(0.1em * var(--tracking)); }
+.grid-line { stroke: var(--grid); stroke-width: 1; }
+.trend-line { fill: none; stroke: var(--trend-line); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
 .trend-area { fill: url(#trendFill); }
-.trend-point { fill: var(--cyan); transition: r 0.12s ease; }
+.trend-point { fill: var(--accent); transition: r 0.12s ease; }
 
 /* Hover-Zustände: die Balkengruppe unter dem Zeiger bleibt hell, der Rest
    tritt zurück. Reagiert auf Klassen, die dashboard.js beim mousemove setzt. */
@@ -482,9 +561,9 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 /* ------------------------------------------------------- Wochen-Score */
 
 .week-score-avg { display: flex; align-items: baseline; gap: 4px; margin-bottom: 10px; }
-.week-score-avg strong { font-family: var(--mono); font-size: 26px; font-weight: 600; color: #eafcff; }
+.week-score-avg strong { font-family: var(--mono); font-size: 26px; font-weight: 600; color: var(--text-strong); }
 .week-score-avg span { font-size: 13px; color: var(--muted); }
-.week-score-avg label { font-size: 9.5px; letter-spacing: 0.13em; color: var(--muted-dim); margin-left: 8px; }
+.week-score-avg label { font-size: 9.5px; letter-spacing: calc(0.13em * var(--tracking)); text-transform: var(--label-case); color: var(--muted-dim); margin-left: 8px; }
 
 .chart--week-score { height: 80px; margin-bottom: 14px; }
 
@@ -494,13 +573,13 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: rgba(8, 24, 31, 0.5);
+  background: var(--sunk);
   transition: border-color 0.3s, box-shadow 0.3s;
 }
-.record-badge label { display: block; font-size: 9px; letter-spacing: 0.12em; color: var(--muted-dim); margin-bottom: 3px; }
-.record-badge strong { font-family: var(--mono); font-size: 17px; font-weight: 600; color: var(--cyan); }
+.record-badge label { display: block; font-size: 9px; letter-spacing: calc(0.12em * var(--tracking)); text-transform: var(--label-case); color: var(--muted-dim); margin-bottom: 3px; }
+.record-badge strong { font-family: var(--mono); font-size: 17px; font-weight: 600; color: var(--accent); }
 .record-badge span { display: block; font-size: 10px; color: var(--muted); margin-top: 2px; }
-.record-badge.is-fresh { border-color: var(--green); box-shadow: 0 0 10px rgba(34, 197, 94, 0.35); }
+.record-badge.is-fresh { border-color: var(--green); box-shadow: var(--glow-fresh); }
 .record-badge.is-fresh strong { color: var(--green-bright); }
 
 /* ------------------------------------------------------ Rekord-Animation */
@@ -518,9 +597,10 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   font-family: var(--mono);
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: calc(0.18em * var(--tracking));
+  text-transform: var(--label-case);
   color: var(--green-bright);
-  text-shadow: 0 0 16px rgba(34, 197, 94, 0.8);
+  text-shadow: var(--text-glow-burst);
   opacity: 0;
   animation: recordBurstText 1.8s ease-out forwards;
 }
@@ -547,6 +627,10 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 
 .trend-hit { fill: transparent; }
 
+/* Leuchten der Diagramm-Marken. Die Farbe kommt als --c vom Element. */
+.donut-arc { filter: drop-shadow(0 0 5px var(--c)); }
+.goal-dot { fill: var(--green); filter: drop-shadow(0 0 4px var(--green)); }
+
 /* --------------------------------------------------------------- Tooltip */
 
 .chart-tooltip {
@@ -564,7 +648,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .chart-tooltip[hidden] { display: none; }
 
 .tt-title {
-  font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em;
+  font-size: 9.5px; font-weight: 700; letter-spacing: calc(0.1em * var(--tracking));
   color: var(--text); margin-bottom: 7px;
 }
 .tt-row {
@@ -595,24 +679,25 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .strip-left > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .strip-mark {
   width: 8px; height: 8px; flex: none;
-  border: 1px solid var(--cyan);
+  border: 1px solid var(--accent);
   transform: rotate(45deg);
-  box-shadow: 0 0 6px rgba(34, 211, 238, 0.6);
+  box-shadow: var(--glow-strip);
 }
 .strip-icon { width: 18px; height: 18px; border-radius: 4px; flex: none; }
 
 .pill {
-  font-size: 9px; font-weight: 700; letter-spacing: 0.13em;
+  font-size: 9px; font-weight: 700; letter-spacing: calc(0.13em * var(--tracking));
+  text-transform: var(--label-case);
   padding: 5px 11px;
   border-radius: 3px;
   border: 1px solid var(--line);
   color: var(--muted);
   flex: none;
 }
-.pill.is-productive { color: var(--green); border-color: rgba(34, 197, 94, 0.45); background: rgba(34, 197, 94, 0.08); }
-.pill.is-neutral { color: var(--cyan); border-color: rgba(34, 211, 238, 0.4); background: rgba(34, 211, 238, 0.07); }
-.pill.is-wasted { color: var(--red); border-color: rgba(255, 45, 85, 0.45); background: rgba(255, 45, 85, 0.08); }
-.pill.is-idle { color: var(--idle); border-color: rgba(100, 116, 139, 0.4); }
+.pill.is-productive { color: var(--pill-productive); border-color: var(--pill-productive-edge); background: var(--pill-productive-bg); }
+.pill.is-neutral { color: var(--pill-neutral); border-color: var(--pill-neutral-edge); background: var(--pill-neutral-bg); }
+.pill.is-wasted { color: var(--pill-wasted); border-color: var(--pill-wasted-edge); background: var(--pill-wasted-bg); }
+.pill.is-idle { color: var(--idle); border-color: var(--pill-idle-edge); }
 
 /* ----------------------------------------------------------- Hochrechnung */
 
@@ -623,7 +708,8 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 }
 .proj label {
   display: block;
-  font-size: 9.5px; letter-spacing: 0.13em; color: var(--muted-dim);
+  font-size: 9.5px; letter-spacing: calc(0.13em * var(--tracking));
+  text-transform: var(--label-case); color: var(--muted-dim);
   margin-bottom: 6px;
 }
 .proj strong {
@@ -631,7 +717,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   font-size: 20px; font-weight: 600;
   color: var(--red);
 }
-.proj--loud strong { font-size: 26px; text-shadow: 0 0 18px rgba(255, 45, 85, 0.45); }
+.proj--loud strong { font-size: 26px; text-shadow: var(--text-glow-wasted-lg); }
 
 @media (max-width: 900px) {
   .projection { grid-template-columns: repeat(2, 1fr); }
@@ -652,15 +738,15 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   cursor: pointer;
   transition: background 0.12s;
 }
-.rank:hover { background: rgba(34, 211, 238, 0.06); }
+.rank:hover { background: var(--hover); }
 
 .rank-cat { width: 4px; height: 20px; border-radius: 1px; }
-.rank-cat.productive { background: var(--green); box-shadow: 0 0 6px rgba(34, 197, 94, 0.6); }
-.rank-cat.neutral { background: var(--cyan); box-shadow: 0 0 6px rgba(34, 211, 238, 0.5); }
-.rank-cat.wasted { background: var(--red); box-shadow: 0 0 6px rgba(255, 45, 85, 0.6); }
+.rank-cat.productive { background: var(--green); box-shadow: var(--glow-productive); }
+.rank-cat.neutral { background: var(--neutral); box-shadow: var(--glow-neutral); }
+.rank-cat.wasted { background: var(--red); box-shadow: var(--glow-wasted); }
 
-.rank-icon { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; background: rgba(34, 211, 238, 0.1); }
-.rank-thumb { width: 44px; height: 25px; border-radius: 3px; object-fit: cover; background: rgba(34, 211, 238, 0.08); }
+.rank-icon { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; background: var(--icon-bg); }
+.rank-thumb { width: 44px; height: 25px; border-radius: 3px; object-fit: cover; background: var(--icon-bg); }
 .ranklist--video .rank { grid-template-columns: auto 44px 1fr auto; }
 
 .rank-body { min-width: 0; }
@@ -669,13 +755,14 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   margin-bottom: 4px;
 }
-.rank-bar { height: 2px; background: rgba(34, 211, 238, 0.08); border-radius: 1px; overflow: hidden; }
+.rank-bar { height: 2px; background: var(--meter-track); border-radius: 1px; overflow: hidden; }
 .rank-bar i { display: block; height: 100%; border-radius: 1px; }
 .rank-bar i.productive { background: var(--green); }
-.rank-bar i.neutral { background: var(--cyan); }
+.rank-bar i.neutral { background: var(--neutral); }
 .rank-bar i.wasted { background: var(--red); }
 
-.rank-time { font-family: var(--mono); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+/* Feste Breite, rechtsbündig: so enden alle Balken einer Liste an derselben Kante. */
+.rank-time { font-family: var(--mono); font-size: 11.5px; color: var(--muted); white-space: nowrap; min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
 .rank-chev { font-size: 9.5px; color: var(--muted-dim); }
 
 .empty { padding: 18px 6px; font-size: 11.5px; color: var(--muted-dim); text-align: center; }
@@ -686,7 +773,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   position: relative;
   z-index: 1;
   border-top: 1px solid var(--line);
-  background: rgba(4, 14, 18, 0.9);
+  background: var(--ticker-bg);
   overflow: hidden;
   padding: 7px 0;
 }
@@ -706,7 +793,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .overlay {
   position: fixed; inset: 0; z-index: 60;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(2, 8, 11, 0.86);
+  background: var(--scrim);
 }
 .overlay[hidden] { display: none; }
 
@@ -718,7 +805,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   background: var(--panel-solid);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 60px rgba(34, 211, 238, 0.08);
+  box-shadow: var(--modal-shadow);
 }
 
 .modal-intro { font-size: 11.5px; line-height: 1.6; color: var(--muted); margin-bottom: 16px; }
@@ -727,28 +814,29 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .preset {
   flex: 1 1 auto;
   padding: 8px 10px;
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em;
+  font-size: 9.5px; font-weight: 600; letter-spacing: calc(0.1em * var(--tracking));
+  text-transform: var(--label-case);
   color: var(--muted);
-  background: rgba(34, 211, 238, 0.05);
+  background: var(--preset-bg);
   border: 1px solid var(--line);
   border-radius: 4px;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
 }
-.preset:hover { color: var(--cyan); border-color: var(--line-strong); }
+.preset:hover { color: var(--accent); border-color: var(--line-strong); }
 
 .slider-row { margin-bottom: 18px; }
 .slider-head {
   display: flex; justify-content: space-between; align-items: baseline;
   font-size: 11.5px; color: var(--muted); margin-bottom: 9px;
 }
-.slider-head b { font-family: var(--mono); font-size: 13px; color: var(--cyan); font-weight: 600; }
+.slider-head b { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 600; }
 .slider-head b.is-wasted { color: var(--red); }
 
 input[type="range"] {
   -webkit-appearance: none;
   width: 100%; height: 3px;
-  background: rgba(34, 211, 238, 0.14);
+  background: var(--range-track);
   border-radius: 2px;
   outline: none;
 }
@@ -756,14 +844,15 @@ input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 14px; height: 14px;
   border-radius: 50%;
-  background: var(--cyan);
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
+  background: var(--accent);
+  box-shadow: var(--glow-thumb);
   cursor: pointer;
 }
 
 .proj-table { width: 100%; border-collapse: collapse; margin: 6px 0 14px; }
 .proj-table th {
-  font-size: 9px; letter-spacing: 0.12em; color: var(--muted-dim);
+  font-size: 9px; letter-spacing: calc(0.12em * var(--tracking));
+  text-transform: var(--label-case); color: var(--muted-dim);
   text-align: right; padding: 8px 0; font-weight: 600;
   border-bottom: 1px solid var(--line);
 }
@@ -771,11 +860,12 @@ input[type="range"]::-webkit-slider-thumb {
 .proj-table td {
   font-family: var(--mono); font-size: 12px; color: var(--text);
   text-align: right; padding: 8px 0;
-  border-bottom: 1px solid rgba(45, 212, 191, 0.07);
+  border-bottom: 1px solid var(--rule);
 }
 .proj-table td:first-child {
   text-align: left; font-family: var(--sans); font-size: 9.5px;
-  letter-spacing: 0.12em; color: var(--muted-dim);
+  letter-spacing: calc(0.12em * var(--tracking));
+  text-transform: var(--label-case); color: var(--muted-dim);
 }
 .proj-table .is-wasted { color: var(--red); }
 
@@ -803,21 +893,332 @@ input[type="range"]::-webkit-slider-thumb {
   width: 100%;
   padding: 7px 8px;
   font-family: var(--sans);
-  font-size: 10px; font-weight: 600; letter-spacing: 0.11em;
+  font-size: 10px; font-weight: 600; letter-spacing: calc(0.11em * var(--tracking));
+  text-transform: var(--label-case);
   color: var(--muted);
   background: none; border: none; border-radius: 3px;
   cursor: pointer; text-align: left;
 }
-.ctx button:hover { background: rgba(34, 211, 238, 0.1); color: var(--text); }
+.ctx button:hover { background: var(--hover-strong); color: var(--text); }
 .ctx-auto {
   margin-top: 5px;
   border-top: 1px solid var(--line) !important;
   padding-top: 9px !important;
   color: var(--muted-dim) !important;
-  letter-spacing: 0.12em;
+  letter-spacing: calc(0.12em * var(--tracking));
 }
 
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(34, 211, 238, 0.14); border-radius: 5px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(34, 211, 238, 0.26); }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); }
+
+/* ------------------------------------------------------------- Bewegung */
+
+/* Bewegung ist hier Rückmeldung, keine Vorführung: ein Kurvenpaar für alles,
+   drei Dauern. Ein- länger als Ausblenden, nichts schwingt über. */
+:root {
+  --ease-out: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-in: cubic-bezier(0.3, 0, 1, 1);
+  --t-quick: 120ms;
+  --t-standard: 220ms;
+  --t-slow: 320ms;
+  interpolate-size: allow-keywords;
+}
+
+/* Designwechsel: eine Überblendung des ganzen Fensters statt hartem Umspringen. */
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: var(--t-slow); animation-timing-function: cubic-bezier(0.2, 0, 0, 1); }
+
+/* Menüs klappen vom Knopf aus auf und verschwinden schneller, als sie kommen. */
+.theme-menu { transform-origin: top right; }
+.ctx {
+  transform-origin: top left;
+  transition:
+    opacity var(--t-quick) var(--ease-in),
+    transform var(--t-quick) var(--ease-in),
+    display var(--t-quick) allow-discrete;
+}
+.ctx:not([hidden]) { transition-duration: 160ms; transition-timing-function: var(--ease-out); }
+.ctx[hidden] { display: none; opacity: 0; transform: translateY(-4px) scale(0.98); }
+@starting-style {
+  .ctx:not([hidden]) { opacity: 0; transform: translateY(-4px) scale(0.98); }
+}
+
+/* Die Stunden-Aufschlüsselung wächst aus der Grafik heraus; die Karte
+   springt nicht, sondern wird höher. */
+.day-detail {
+  overflow: clip;
+  transition:
+    height var(--t-standard) var(--ease-out),
+    opacity var(--t-standard) var(--ease-out),
+    margin-top var(--t-standard) var(--ease-out),
+    padding-top var(--t-standard) var(--ease-out),
+    display var(--t-standard) allow-discrete;
+}
+.day-detail[hidden] { height: 0; opacity: 0; margin-top: 0; padding-top: 0; }
+@starting-style {
+  .day-detail:not([hidden]) { height: 0; opacity: 0; margin-top: 0; padding-top: 0; }
+}
+.day-detail.is-opening .rank,
+.day-detail.is-opening .day-detail-note {
+  animation: rowIn var(--t-standard) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 25ms + 60ms);
+}
+@keyframes rowIn { from { opacity: 0; transform: translateY(6px); } }
+
+.btn { transition: color 0.15s, border-color 0.15s, background 0.15s, transform var(--t-quick) var(--ease-out); }
+.btn:active { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-delay: 0s !important; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+}
+
+/* ----------------------------------------------------------- Design-Menü */
+
+.swatches { display: inline-flex; gap: 3px; margin-right: 2px; }
+.swatches i { width: 9px; height: 9px; border-radius: 2px; }
+/* Feste Farben: die Vorschau zeigt das jeweilige Design, egal welches aktiv ist. */
+.swatches--jarvis i:nth-child(1) { background: #050d11; box-shadow: inset 0 0 0 1px #2d4a52; }
+.swatches--jarvis i:nth-child(2) { background: #22d3ee; }
+.swatches--jarvis i:nth-child(3) { background: #22c55e; }
+.swatches--mischpult i:nth-child(1) { background: #1f1e1c; box-shadow: inset 0 0 0 1px #4a4641; }
+.swatches--mischpult i:nth-child(2) { background: #f2b632; }
+.swatches--mischpult i:nth-child(3) { background: #9be564; }
+/* Haken als gezeichnete Linie statt Schriftzeichen. */
+.theme-menu button[aria-checked="true"]::after {
+  content: "";
+  margin: 0 3px -1px auto;
+  width: 9px; height: 5px;
+  border-left: 1.5px solid var(--accent);
+  border-bottom: 1.5px solid var(--accent);
+  transform: translateY(-2px) rotate(-45deg);
+}
+
+/* Elemente, die nur ein Design hat. */
+.brand-mark-mixer { display: none; }
+.led-meter { display: none; }
+
+/* =============================================================== Mischpult
+
+   Das Studio-Pult als Vorlage: anthrazitfarbene Fläche, Bernstein als
+   Lampenfarbe für Bedienung und Auswahl, LED-Grün und -Rot für die Daten.
+   Kein Leuchten, keine Verläufe, keine Versalien. Zahlen in DIN Condensed
+   (liegt jedem Mac bei, Ziffern gleich breit), alles andere in der
+   Systemschrift. Der Score ist ein LED-Pegel, der Tagesverlauf eine Reihe
+   LED-Ketten. */
+
+:root[data-theme="mischpult"] {
+  --bg: #161514;
+  --bg-deep: #141312;
+  --panel: #1f1e1c;
+  --panel-solid: #262422;
+  --line: #2f2d2a;
+  --line-strong: #4a4641;
+  /* Drei Helligkeitsstufen, damit die Kategorien auch ohne Farbsehen
+     auseinandergehen: grün hell, rot mittel, neutral dunkel. */
+  --green: #9be564;
+  --green-bright: #b5f08a;
+  --red: #ff6b47;
+  --red-dim: #c2412a;
+  --idle: #8d877e;
+  --text: #edebe7;
+  --text-strong: #f3f3f1;
+  --muted: #b3afa8;
+  --muted-dim: #9c978f;
+  --mono: "DIN Condensed", ui-monospace, Menlo, monospace;
+  --radius: 4px;
+
+  --accent: #f2b632;
+  --neutral: #6d6862;
+  --heading: var(--text);
+  --topbar-bg: #1a1918;
+  --backdrop: #141312;
+  --control-bg: #262422;
+  --datepill-bg: #1a1918;
+  --sunk: #1a1918;
+  --hover: #2a2826;
+  --hover-strong: #312f2c;
+  --icon-bg: #2a2826;
+  --ring-track: #2c2a27;
+  --ring-inner: transparent;
+  --meter-track: #2c2a27;
+  --range-track: #3a3733;
+  --day-track: #2c2a27;
+  --track-swatch: #2c2a27;
+  --track-swatch-edge: #4a4641;
+  --now-ring: none;
+  --selected-ring: none;
+  --grid: #2f2d2a;
+  --rule: #2a2826;
+  --trend-line: var(--text);
+  --trend-fill: rgba(242, 182, 50, 0.14);
+  --fill-productive: var(--green);
+  --fill-wasted: var(--red);
+  --ticker-bg: #1a1918;
+  --scrim: rgba(12, 11, 10, 0.82);
+  --modal-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --preset-bg: #262422;
+  --scroll-thumb: #3a3733;
+  --scroll-thumb-hover: #4a4641;
+
+  --btn-accent-text: #1a1918;
+  --btn-accent-bg: var(--accent);
+  --btn-accent-border: var(--accent);
+  --btn-accent-hover-text: #1a1918;
+  --btn-accent-hover-bg: #ffc64d;
+  --btn-accent-hover-border: #ffc64d;
+
+  --pill-productive: #b5f08a;  --pill-productive-bg: #22301a;  --pill-productive-edge: transparent;
+  --pill-neutral: #d6cfc4;     --pill-neutral-bg: #2c2a27;     --pill-neutral-edge: transparent;
+  --pill-wasted: #ff9a80;      --pill-wasted-bg: #35201a;      --pill-wasted-edge: transparent;
+  --pill-idle-edge: #3a3733;
+
+  --glow-brand-ring: none;
+  --glow-brand-core: none;
+  --glow-pulse: none;
+  --glow-accent-sm: none;
+  --glow-strip: none;
+  --glow-productive: none;
+  --glow-neutral: none;
+  --glow-wasted: none;
+  --glow-bar-productive: none;
+  --glow-bar-wasted: none;
+  --glow-fresh: none;
+  --glow-thumb: none;
+  --text-glow-productive: none;
+  --text-glow-wasted: none;
+  --text-glow-wasted-lg: none;
+  --text-glow-burst: none;
+
+  --label-case: none;
+  --tracking: 0;
+}
+
+/* Kopfzeile und Karten: HUD-Zierrat weg, die Marke wird zum Kanalpegel. */
+[data-theme="mischpult"] .card::before,
+[data-theme="mischpult"] .card::after,
+[data-theme="mischpult"] .card-head h2::before,
+[data-theme="mischpult"] .ticker { display: none; }
+[data-theme="mischpult"] .brand-mark { border: 0; border-radius: 0; width: 20px; height: 20px; }
+[data-theme="mischpult"] .brand-mark::after { display: none; }
+[data-theme="mischpult"] .brand-mark-mixer { display: block; width: 100%; height: 100%; fill: var(--accent); }
+[data-theme="mischpult"] .pulse { animation: none; }
+[data-theme="mischpult"] .donut-arc,
+[data-theme="mischpult"] .goal-dot { filter: none; }
+[data-theme="mischpult"] .burst-particle { box-shadow: none; }
+
+/* Schrift: Satzschreibweise braucht mehr Grösse als gesperrte Versalien,
+   und die schmale DIN braucht mehr Grösse als die Monospace. */
+[data-theme="mischpult"] .brand-text h1 { font-size: 15px; font-weight: 600; }
+[data-theme="mischpult"] .brand-text p { font-size: 13px; }
+[data-theme="mischpult"] .btn { font-size: 13px; font-weight: 500; padding: 7px 13px; }
+[data-theme="mischpult"] .btn-accent { font-weight: 600; }
+[data-theme="mischpult"] .datepill { font-size: 15px; letter-spacing: 0.02em; padding: 5px 12px; }
+[data-theme="mischpult"] .card-head h2 { font-size: 14px; font-weight: 600; }
+[data-theme="mischpult"] .card-sub { font-size: 12px; color: var(--muted-dim); }
+[data-theme="mischpult"] .card-note { font-size: 13px; }
+[data-theme="mischpult"] .stat label,
+[data-theme="mischpult"] .proj label,
+[data-theme="mischpult"] .week-score-avg label { font-size: 13px; color: var(--muted); }
+[data-theme="mischpult"] .record-badge label { font-size: 13px; color: var(--muted); }
+[data-theme="mischpult"] .stat strong { font-size: 30px; }
+[data-theme="mischpult"] .proj strong { font-size: 26px; }
+[data-theme="mischpult"] .proj--loud strong { font-size: 30px; }
+[data-theme="mischpult"] .week-score-avg strong { font-size: 34px; }
+[data-theme="mischpult"] .record-badge strong { font-size: 22px; }
+[data-theme="mischpult"] .legend li { font-size: 13px; }
+[data-theme="mischpult"] .legend li b,
+[data-theme="mischpult"] .meter-head b,
+[data-theme="mischpult"] .tt-row b,
+[data-theme="mischpult"] .tt-total b { font-size: 15px; }
+[data-theme="mischpult"] .meter-head { font-size: 13px; }
+[data-theme="mischpult"] .chart-legend span { font-size: 12px; }
+[data-theme="mischpult"] .rank-name { font-size: 13.5px; }
+[data-theme="mischpult"] .rank-time { font-size: 15px; }
+[data-theme="mischpult"] .pill { font-size: 12px; font-weight: 600; padding: 4px 10px; }
+[data-theme="mischpult"] .ctx button { font-size: 13px; font-weight: 500; }
+[data-theme="mischpult"] .ctx-title { font-size: 12px; }
+[data-theme="mischpult"] .preset { font-size: 12px; font-weight: 500; }
+[data-theme="mischpult"] .proj-table th,
+[data-theme="mischpult"] .proj-table td:first-child { font-size: 12px; font-weight: 500; }
+[data-theme="mischpult"] .proj-table td { font-size: 15px; }
+[data-theme="mischpult"] .slider-head b { font-size: 17px; }
+[data-theme="mischpult"] .tt-title { font-size: 12px; }
+[data-theme="mischpult"] .tt-row,
+[data-theme="mischpult"] .tt-total,
+[data-theme="mischpult"] .tt-hint { font-size: 12.5px; }
+[data-theme="mischpult"] .day-axis span { font-size: 12px; letter-spacing: 0; }
+[data-theme="mischpult"] .axis-label { font-family: var(--sans); font-size: 10.5px; }
+[data-theme="mischpult"] .day-detail-title { font-size: 15px; letter-spacing: 0.02em; }
+[data-theme="mischpult"] .day-detail-sub { font-size: 13px; }
+[data-theme="mischpult"] .day-detail-note { font-size: 13px; }
+[data-theme="mischpult"] .record-burst-text { font-family: var(--sans); font-size: 15px; }
+[data-theme="mischpult"] .empty { font-size: 13px; }
+
+/* Fokus-Reaktor als Kanalzug: links der LED-Pegel, rechts der Wert. */
+[data-theme="mischpult"] #cardReactor .gauge-svg { display: none; }
+/* Die Karte ist so hoch wie "Heute" daneben. Statt eines leeren Bands
+   darunter wächst der Pegel mit. */
+[data-theme="mischpult"] #cardReactor { display: flex; flex-direction: column; }
+[data-theme="mischpult"] #cardReactor .reactor { flex: 1; align-items: stretch; }
+[data-theme="mischpult"] #cardReactor .legend { justify-content: center; }
+[data-theme="mischpult"] #cardReactor .gauge {
+  width: 132px;
+  height: auto;
+  min-height: 148px;
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+}
+[data-theme="mischpult"] #cardReactor .gauge-label { position: static; flex: 1; justify-content: flex-start; }
+[data-theme="mischpult"] #cardReactor .gauge-label strong { font-size: 40px; line-height: 1; }
+[data-theme="mischpult"] #cardReactor .gauge-label span { font-size: 16px; margin-top: 10px; }
+[data-theme="mischpult"] .gauge--sm .gauge-label strong { font-size: 28px; }
+[data-theme="mischpult"] .gauge--sm .gauge-label span { font-size: 12px; }
+[data-theme="mischpult"] #cardReactor .led-meter {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+  width: 16px;
+  flex: none;
+}
+.led {
+  flex: 1;
+  border-radius: 1px;
+  background: #2c2a27;
+  /* Ballistik wie am Pult: Pegel springt schnell hoch und fällt langsam ab. */
+  transition: background-color 420ms var(--ease-in);
+}
+.led.is-lit {
+  transition-duration: 70ms;
+  transition-timing-function: var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 12ms);
+}
+.led.is-lit.zone-low { background: var(--red); }
+.led.is-lit.zone-mid { background: var(--accent); }
+.led.is-lit.zone-high { background: var(--green); }
+
+/* Tagesverlauf als LED-Ketten. Die Maske schneidet Spur und Segmente in
+   gleich hohe Zellen; unbeleuchtete Zellen sind die leere Spur. */
+[data-theme="mischpult"] .day-track {
+  gap: 0;
+  border-radius: 1px;
+  -webkit-mask-image: repeating-linear-gradient(to top, #000 0 5px, transparent 5px 7px); /* taste-skill-ignore: Maske, die Zellen schneidet, keine Farbfläche */
+  mask-image: repeating-linear-gradient(to top, #000 0 5px, transparent 5px 7px); /* taste-skill-ignore: Maske, die Zellen schneidet, keine Farbfläche */
+}
+[data-theme="mischpult"] .seg { border-radius: 0; }
+/* Auswahl und laufende Stunde als Marke unter der Kette — ein Rahmen würde
+   von der Maske mit zerschnitten. */
+[data-theme="mischpult"] .day-hour { position: relative; }
+[data-theme="mischpult"] .day-hour.is-now::after,
+[data-theme="mischpult"] .day-hour.is-selected::after {
+  content: "";
+  position: absolute;
+  left: 1px; right: 1px; bottom: -5px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--muted-dim);
+}
+[data-theme="mischpult"] .day-hour.is-selected::after { background: var(--accent); height: 3px; }

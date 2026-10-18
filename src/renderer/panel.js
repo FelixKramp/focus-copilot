@@ -5,10 +5,10 @@
 const $ = (id) => document.getElementById(id);
 
 const CAT_LABEL = {
-  productive: 'PRODUKTIV',
-  neutral: 'NEUTRAL',
-  wasted: 'PROKRASTINATION',
-  inactive: 'NICHT AM PC',
+  productive: 'Produktiv',
+  neutral: 'Neutral',
+  wasted: 'Prokrastination',
+  inactive: 'Nicht am PC',
 };
 
 /**
@@ -43,6 +43,10 @@ function describeCurrent(cur) {
 }
 
 function render(s) {
+  // Dasselbe Design wie im Dashboard.
+  const theme = s.settings && s.settings.theme === 'mischpult' ? 'mischpult' : 'jarvis';
+  document.documentElement.dataset.theme = theme;
+
   const r = 40;
   const circumference = 2 * Math.PI * r;
   const ring = $('ring');
@@ -58,7 +62,7 @@ function render(s) {
   trendEl.className = 'trend' + (s.today.trend ? ` is-${s.today.trend}` : '');
 
   $('statusDot').classList.toggle('is-paused', !s.tracking);
-  $('btnTracking').textContent = s.tracking ? 'PAUSE' : 'START';
+  $('btnTracking').textContent = s.tracking ? 'Pause' : 'Start';
 
   $('total').textContent = fmt(s.today.total);
   $('productive').textContent = fmt(s.today.productive);
@@ -89,7 +93,7 @@ function render(s) {
   const cat = cur.idle ? 'inactive' : (cur.category || 'neutral');
   $('currentName').textContent = describeCurrent(cur);
   const pill = $('currentPill');
-  pill.textContent = CAT_LABEL[cat] || 'NEUTRAL';
+  pill.textContent = CAT_LABEL[cat] || 'Neutral';
   pill.className = 'pill is-' + (cat === 'inactive' ? 'idle' : cat);
 }
 
