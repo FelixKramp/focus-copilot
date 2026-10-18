@@ -9,6 +9,7 @@
  * App und ihre data.json bleiben unberührt.
  *
  *   npx electron scripts/preview.js [--out datei.png] [--clip #day] [--date 2026-08-14]
+ *                                   [--hover <selektor>] [--click <selektor>]
  */
 
 const { app, BrowserWindow } = require('electron');
@@ -104,6 +105,22 @@ app.whenReady().then(async () => {
     );
     console.log(`  hover ${HOVER}: ${ok ? 'Tooltip sichtbar' : 'KEIN Tooltip'}`);
     await new Promise((r) => setTimeout(r, 200));
+  }
+
+  // --click <selector>: Element anklicken, z. B. eine Stunde im Tagesverlauf,
+  // um deren Aufschlüsselung mit aufs Bild zu holen.
+  const CLICK = arg('click', '');
+  if (CLICK) {
+    const ok = await win.webContents.executeJavaScript(
+      `(() => {
+         const el = document.querySelector(${JSON.stringify(CLICK)});
+         if (!el) return false;
+         el.click();
+         return true;
+       })()`,
+    );
+    console.log(`  click ${CLICK}: ${ok ? 'geklickt' : 'NICHT GEFUNDEN'}`);
+    await new Promise((r) => setTimeout(r, 300));
   }
 
   let rect;

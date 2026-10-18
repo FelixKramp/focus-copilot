@@ -8,10 +8,25 @@ const $ = (id) => document.getElementById(id);
 let snapshot = null;
 let pendingGoals = null;
 
-let viewedDate = new Date();
 const MAX_DAYS_BACK = 29;
 
-/** Spiegelt store.js' dayKey() — der Renderer hat keinen Zugriff auf Node/Main-Code. */
+/** Spiegelt store.js' DAY_START_HOUR — der Renderer hat keinen Zugriff auf
+    Node/Main-Code. Bis 4 Uhr morgens läuft noch der Vortag. */
+const DAY_START_HOUR = 4;
+
+/** Der laufende Tag als Datum um Mitternacht — um 1:30 Uhr also noch gestern. */
+function logicalToday() {
+  const d = new Date();
+  if (d.getHours() < DAY_START_HOUR) d.setDate(d.getDate() - 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+let viewedDate = logicalToday();
+
+/** Datum (Mitternacht) → "YYYY-MM-DD". Anders als store.js' dayKey() ohne
+    4-Uhr-Verschiebung, weil der Renderer nur mit Tagesdaten rechnet, die
+    schon aus logicalToday() bzw. einem Schlüssel stammen. */
 function dayKeyLocal(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -30,7 +45,7 @@ function isSameDay(a, b) {
 }
 
 function clampViewedDate(d) {
-  const today = new Date();
+  const today = logicalToday();
   const earliest = new Date(today);
   earliest.setDate(today.getDate() - MAX_DAYS_BACK);
   if (d > today) return today;
@@ -44,7 +59,7 @@ async function loadDay(date) {
 }
 
 function updateDateNavButtons() {
-  const today = new Date();
+  const today = logicalToday();
   const earliest = new Date(today);
   earliest.setDate(today.getDate() - MAX_DAYS_BACK);
   $('btnPrevDay').disabled = !(viewedDate > earliest);
@@ -273,6 +288,13 @@ function trendTooltipHtml(p) {
 
 const HOUR_SECONDS = 3600;
 let lastDayHours = [];
+/** Angeklickte Stunde (echte Uhrzeit 0–23) oder null. */
+let selectedHour = null;
+/** Für welchen Tag selectedHour gilt — beim Tageswechsel schliesst das Detail. */
+let selectedDayKey = null;
+/** Zuletzt gezeichneter Inhalt des Details. Der Live-Push kommt alle paar
+    Sekunden; ohne Vergleich würden die App-Icons jedes Mal neu laden. */
+let lastDetailSignature = '';
 
 /**
  * Tagesverlauf: eine Spur je Stunde, immer volle 60 Minuten hoch.
@@ -285,9 +307,12 @@ let lastDayHours = [];
  * dieselben 60 Minuten steht, sind die Stunden direkt vergleichbar, statt
  * relativ zur jeweils vollsten Stunde des Tages.
  */
-function renderDay(hours, isToday) {
+function renderDay(hours, isToday, dayStart = 0) {
   lastDayHours = hours;
   const currentHour = isToday ? new Date().getHours() : -1;
+  // Der Tag läuft von dayStart bis dayStart, also z. B. 4 … 23, 0 … 3.
+  // data-i bleibt die echte Uhrzeit, nur die Reihenfolge ändert sich.
+  const order = Array.from({ length: 24 }, (_, k) => (dayStart + k) % 24);
 
   const parts = [
     { key: 'p', cls: 'seg-productive' },
@@ -296,7 +321,8 @@ function renderDay(hours, isToday) {
   ];
 
   let grid = '';
-  hours.forEach((h, i) => {
+  for (const i of order) {
+    const h = hours[i] || {};
     let segs = '';
     for (const part of parts) {
       const value = h[part.key] || 0;
@@ -307,15 +333,18 @@ function renderDay(hours, isToday) {
     }
     const classes = ['day-hour'];
     if (i === currentHour) classes.push('is-now');
+    if (i === selectedHour) classes.push('is-selected');
     if (!segs) classes.push('is-empty');
     grid += `<div class="${classes.join(' ')}" data-i="${i}">`
       + `<div class="day-track">${segs}</div></div>`;
-  });
-
-  let axis = '';
-  for (let i = 0; i < 24; i++) {
-    axis += `<span>${i % 3 === 0 ? String(i).padStart(2, '0') : ''}</span>`;
   }
+
+  // Alle drei Stunden ab Tagesbeginn beschriften, damit die erste Spur
+  // zeigt, wann der Tag anfängt (04, 07, 10 … statt 06, 09, 12 …).
+  let axis = '';
+  order.forEach((i, k) => {
+    axis += `<span>${k % 3 === 0 ? String(i).padStart(2, '0') : ''}</span>`;
+  });
 
   $('day').innerHTML = `<div class="day-grid">${grid}</div><div class="day-axis">${axis}</div>`;
 }
@@ -343,7 +372,114 @@ function dayTooltipHtml(i, h) {
     <div class="tt-row"><i class="dot dot-neutral"></i>Neutral<b>${n} Min</b></div>
     <div class="tt-row"><i class="dot dot-wasted"></i>Prokrastination<b>${w} Min</b></div>
     <div class="tt-total"><span>Nicht am Mac</span><b>${away} Min</b></div>
+    <div class="tt-hint">${i === selectedHour ? 'Klicken zum Schliessen' : 'Klicken für die Apps'}</div>
   `;
+}
+
+const HOUR_DETAIL_LIMIT = 8;
+const appIconCache = new Map();
+
+function appIconRow(row, appName) {
+  const img = row.querySelector('.rank-icon');
+  if (appIconCache.has(appName)) {
+    const cached = appIconCache.get(appName);
+    if (cached) img.src = cached;
+    return;
+  }
+  window.copilot.getAppIcon(appName).then((dataUrl) => {
+    appIconCache.set(appName, dataUrl || null);
+    if (dataUrl) img.src = dataUrl;
+  });
+}
+
+/**
+ * Aufschlüsselung der angeklickten Stunde: welche Apps und Websites liefen,
+ * als Rangliste wie unten bei "Apps" — inklusive Klick zum Umstufen.
+ */
+function renderHourDetail() {
+  const box = $('dayDetail');
+  if (selectedHour === null || !snapshot) {
+    box.hidden = true;
+    box.innerHTML = '';
+    lastDetailSignature = '';
+    return;
+  }
+
+  const i = selectedHour;
+  const h = snapshot.hours[i] || {};
+  const items = (snapshot.hourItems || [])[i];
+  const active = (h.p || 0) + (h.n || 0) + (h.w || 0);
+
+  const signature = JSON.stringify([snapshot.date.key, i, active, items]);
+  if (signature === lastDetailSignature && !box.hidden) return;
+  lastDetailSignature = signature;
+
+  const from = String(i).padStart(2, '0');
+  const to = String((i + 1) % 24).padStart(2, '0');
+  box.innerHTML = `
+    <div class="day-detail-head">
+      <span class="day-detail-title">${from}:00 – ${to}:00</span>
+      <span class="day-detail-sub">${fmt(active)} am Mac</span>
+      <button class="day-detail-close" type="button" aria-label="Schliessen">×</button>
+    </div>
+    <ul class="ranklist" id="listHour"></ul>
+  `;
+  box.hidden = false;
+  const list = $('listHour');
+
+  if (!items) {
+    // Stunde von vor dem Update: es gibt nur die Summen.
+    list.innerHTML = '<li class="empty">Für diese Stunde gibt es keine Aufschlüsselung — '
+      + 'die App merkt sich erst seit dem Update, was in welcher Stunde lief.</li>';
+    return;
+  }
+  if (!items.length) {
+    list.innerHTML = '<li class="empty">Nicht am Mac.</li>';
+    return;
+  }
+
+  const shown = items.slice(0, HOUR_DETAIL_LIMIT);
+  const max = shown[0].seconds;
+  for (const item of shown) {
+    const isApp = item.kind === 'app';
+    const row = rankRow({
+      key: `${item.kind}:${item.name.toLowerCase()}`,
+      name: item.name,
+      seconds: item.seconds,
+      category: item.category,
+      max,
+      iconHtml: isApp
+        ? '<img class="rank-icon" alt="" />'
+        : `<img class="rank-icon" alt="" src="https://icons.duckduckgo.com/ip3/${encodeURIComponent(item.name)}.ico" onerror="this.style.visibility='hidden'" />`,
+    });
+    list.appendChild(row);
+    if (isApp) appIconRow(row, item.name);
+  }
+
+  // Was nicht in die Liste passt oder keinem Eintrag zugeordnet ist (z. B.
+  // Zeit von vor dem Update in derselben Stunde), steht als Rest darunter.
+  const rest = items.slice(HOUR_DETAIL_LIMIT);
+  const listed = items.reduce((sum, e) => sum + e.seconds, 0);
+  const notes = [];
+  if (rest.length) {
+    notes.push(`+ ${rest.length} weitere · ${fmt(rest.reduce((sum, e) => sum + e.seconds, 0))}`);
+  }
+  if (active - listed >= 60) notes.push(`${fmt(active - listed)} ohne Zuordnung`);
+  if (notes.length) {
+    const li = document.createElement('li');
+    li.className = 'day-detail-note';
+    li.textContent = notes.join('  ·  ');
+    list.appendChild(li);
+  }
+}
+
+function selectHour(i) {
+  selectedHour = selectedHour === i ? null : i;
+  selectedDayKey = selectedHour === null ? null : snapshot.date.key;
+  for (const cell of $('day').querySelectorAll('.day-hour')) {
+    cell.classList.toggle('is-selected', Number(cell.dataset.i) === selectedHour);
+  }
+  renderHourDetail();
 }
 
 let freshRecordType = null; // 'day' | 'week' | null — bleibt für den Rest der Sitzung markiert
@@ -566,7 +702,12 @@ function render(s) {
   renderDonut(s.today);
   renderWeek(s.last7);
   renderTrend(s.last14);
-  renderDay(s.hours, s.date.isToday);
+  if (selectedDayKey !== s.date.key) {
+    selectedHour = null;
+    selectedDayKey = null;
+  }
+  renderDay(s.hours, s.date.isToday, s.dayStart || 0);
+  renderHourDetail();
 
   $('currentStrip').hidden = !s.date.isToday;
 
@@ -728,6 +869,18 @@ function attachDayHover() {
   container.addEventListener('mouseleave', () => {
     for (const cell of container.querySelectorAll('.day-hour')) cell.classList.remove('is-dim');
     hideTooltip();
+  });
+  // Klick öffnet die Aufschlüsselung darunter; leere Stunden haben keine.
+  container.addEventListener('click', (e) => {
+    const cell = e.target.closest('.day-hour');
+    if (!cell || !snapshot) return;
+    const i = Number(cell.dataset.i);
+    if (cell.classList.contains('is-empty') && selectedHour !== i) return;
+    selectHour(i);
+    showTooltip(e.clientX, e.clientY, dayTooltipHtml(i, lastDayHours[i] || {}));
+  });
+  $('dayDetail').addEventListener('click', (e) => {
+    if (e.target.closest('.day-detail-close')) selectHour(selectedHour);
   });
 }
 
