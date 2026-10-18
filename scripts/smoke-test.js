@@ -13,7 +13,7 @@ const path = require('path');
 const {
   classify, domainFromUrl, youtubeIdFromUrl, isIgnoredProcess,
 } = require('../src/main/classify');
-const { Store, dayKey, emptyDay } = require('../src/main/store');
+const { Store, dayKey, emptyDay, DAY_START_HOUR } = require('../src/main/store');
 const { buildSnapshot, focusScore } = require('../src/main/stats');
 const { scoreTrend } = require('../src/main/score');
 
@@ -443,6 +443,134 @@ check('Zielfortschritt wird gedeckelt und Budget-Überschreitung erkannt', () =>
   assert.strictEqual(snap.goals.productiveProgress, 1, 'darf nicht über 100 % gehen');
   assert.strictEqual(snap.goals.budgetProgress, 0, 'ohne Budget kein Fortschritt');
   store.setGoals({ productiveMinutes: 180, maxWasteMinutes: 60 }); // zurücksetzen
+});
+
+check('Der Tag wechselt um 4 Uhr, nicht um Mitternacht', () => {
+  assert.strictEqual(DAY_START_HOUR, 4);
+  assert.strictEqual(dayKey(new Date(2026, 9, 20, 0, 30)), '2026-10-19', '0:30 gehört zum Vortag');
+  assert.strictEqual(dayKey(new Date(2026, 9, 20, 3, 59)), '2026-10-19', '3:59 gehört zum Vortag');
+  assert.strictEqual(dayKey(new Date(2026, 9, 20, 4, 0)), '2026-10-20', 'ab 4:00 neuer Tag');
+  assert.strictEqual(dayKey(new Date(2026, 9, 20, 23, 59)), '2026-10-20');
+  // Monats- und Jahresgrenze
+  assert.strictEqual(dayKey(new Date(2027, 0, 1, 2, 0)), '2026-12-31');
+  // Zeitumstellung (25.10.2026, 3 → 2 Uhr): 2:30 ist noch der Vortag.
+  assert.strictEqual(dayKey(new Date(2026, 9, 25, 2, 30)), '2026-10-24');
+});
+
+check('lastDays() beschriftet mit dem Tag aus dem Schlüssel', () => {
+  for (const { key, date } of store.lastDays(7)) {
+    assert.strictEqual(dayKey(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12)), key);
+  }
+});
+
+check('Neue Tage merken sich den 4-Uhr-Start, alte zeigen ab Mitternacht', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  const fresh = buildSnapshot(s, { running: true, current: {} });
+  assert.strictEqual(fresh.dayStart, 4);
+
+  const legacy = { ...emptyDay(), productive: 60, total: 60 };
+  delete legacy.dayStart;
+  s.data.days['2020-01-01'] = legacy;
+  assert.strictEqual(buildSnapshot(s, { running: true, current: {} }, '2020-01-01').dayStart, 0);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Jede Stunde merkt sich, welche App bzw. Website lief', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  s.record(30, 'productive', { app: 'Logic Pro' });
+  s.record(9, 'wasted', { app: 'Safari', domain: 'youtube.com' });
+  s.record(6, 'productive', { app: 'Logic Pro' });
+
+  const hour = new Date().getHours();
+  const items = s.day().hours[hour].items;
+  assert.deepStrictEqual(items['app:Logic Pro'], { sec: 36, cat: 'productive' });
+  // Im Browser zählt die Website — Safari selbst taucht in der Stunde nicht auf.
+  assert.deepStrictEqual(items['domain:youtube.com'], { sec: 9, cat: 'wasted' });
+  assert.strictEqual(items['app:Safari'], undefined);
+
+  const snap = buildSnapshot(s, { running: true, current: {} });
+  assert.deepStrictEqual(snap.hourItems[hour][0], {
+    kind: 'app', name: 'Logic Pro', seconds: 36, category: 'productive',
+  });
+  assert.strictEqual(snap.hours[hour].items, undefined, 'hours bleibt schlank');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Alte Stunden ohne Einträge liefern null statt einer leeren Liste', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  const legacy = emptyDay();
+  legacy.hours = legacy.hours.map(() => ({ p: 0, n: 0, w: 0, i: 0 }));
+  legacy.hours[10].p = 600;
+  s.data.days['2020-01-02'] = legacy;
+  const snap = buildSnapshot(s, { running: true, current: {} }, '2020-01-02');
+  assert.strictEqual(snap.hourItems[10], null);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Umstufen passt auch die Stunden im Tagesverlauf an', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  s.record(60, 'wasted', { app: 'Safari', domain: 'reddit.com' });
+  s.record(30, 'productive', { app: 'Xcode' });
+  const hour = new Date().getHours();
+
+  s.setOverride('domain:reddit.com', 'productive');
+  let h = s.day().hours[hour];
+  assert.strictEqual(h.w, 0);
+  assert.strictEqual(h.p, 90);
+  assert.strictEqual(h.items['domain:reddit.com'].cat, 'productive');
+
+  // Zweimal laden darf nichts doppelt verschieben.
+  s.flush();
+  h = new Store(dir).day().hours[hour];
+  assert.strictEqual(h.p, 90);
+  assert.strictEqual(h.w, 0);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Umstieg: ein nach Mitternacht angelegter Tag wird in heute gefaltet', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const futureKey = dayKey(tomorrow);
+  const todayKey = dayKey();
+
+  const legacyDay = (productiveSec, hour) => {
+    const d = emptyDay();
+    delete d.dayStart;
+    d.hours = d.hours.map(() => ({ p: 0, n: 0, w: 0, i: 0 }));
+    d.productive = productiveSec;
+    d.total = productiveSec;
+    d.apps = { 'Logic Pro': { sec: productiveSec, cat: 'productive' } };
+    d.hours[hour].p = productiveSec;
+    return d;
+  };
+  fs.writeFileSync(path.join(dir, 'data.json'), JSON.stringify({
+    days: { [todayKey]: legacyDay(600, 12), [futureKey]: legacyDay(1020, 0) },
+  }));
+
+  const s = new Store(dir);
+  assert.strictEqual(s.data.days[futureKey], undefined, 'Zukunftstag ist weg');
+  const today = s.data.days[todayKey];
+  assert.strictEqual(today.productive, 1620);
+  assert.strictEqual(today.apps['Logic Pro'].sec, 1620);
+  assert.strictEqual(today.hours[0].p, 1020);
+  // Stunde 0 ist jetzt belegt, darum bleibt der Tag im alten Format.
+  assert.strictEqual(today.dayStart, undefined);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Umstieg: ein laufender Tag ohne Nachtstunden bekommt den 4-Uhr-Start', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const d = emptyDay();
+  delete d.dayStart;
+  d.hours[15].p = 300;
+  fs.writeFileSync(path.join(dir, 'data.json'), JSON.stringify({ days: { [dayKey()]: d } }));
+  assert.strictEqual(new Store(dir).day().dayStart, 4);
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 fs.rmSync(tmp, { recursive: true, force: true });

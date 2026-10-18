@@ -35,6 +35,19 @@ function defaultRecords() {
   };
 }
 
+/**
+ * Der Tag wechselt um 4 Uhr morgens, nicht um Mitternacht. Wer um 23:30 noch
+ * arbeitet und um 0:30 aufhört, hat einen Abend gehabt, keine zwei Tage —
+ * mit Mitternacht als Grenze stand der Score um 0:00 plötzlich wieder auf 0.
+ */
+const DAY_START_HOUR = 4;
+
+/** Eine Stunde im Tagesverlauf. `items` hält, was in der Stunde lief:
+    { "app:Logic Pro": { sec, cat }, "domain:github.com": { sec, cat } }. */
+function emptyHour() {
+  return { p: 0, n: 0, w: 0, i: 0, items: {} };
+}
+
 function emptyDay() {
   return {
     total: 0,
@@ -45,16 +58,33 @@ function emptyDay() {
     apps: {},
     domains: {},
     youtube: {},
-    hours: Array.from({ length: 24 }, () => ({ p: 0, n: 0, w: 0, i: 0 })),
+    hours: Array.from({ length: 24 }, emptyHour),
+    // Ab welcher Uhrzeit dieser Tag läuft. Tage von vor der 4-Uhr-Umstellung
+    // haben das Feld nicht und liefen von 0 bis 24 Uhr.
+    dayStart: DAY_START_HOUR,
   };
 }
 
-/** Lokales Datum als YYYY-MM-DD (nicht UTC — der Tag soll dem Nutzer entsprechen). */
-function dayKey(d = new Date()) {
+/** Kalenderdatum als YYYY-MM-DD, ohne Tageswechsel-Verschiebung. */
+function dateKey(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+/**
+ * Zu welchem Tag ein Zeitpunkt gehört, als YYYY-MM-DD in lokaler Zeit (nicht
+ * UTC — der Tag soll dem Nutzer entsprechen). Vor DAY_START_HOUR zählt noch
+ * zum Vortag: Montag 1:30 Uhr → "Sonntag".
+ *
+ * Über die Uhrzeit statt über "minus 4 Stunden" gerechnet, damit die
+ * Zeitumstellung nicht eine Stunde falsch zuordnet.
+ */
+function dayKey(d = new Date()) {
+  const x = new Date(d);
+  if (x.getHours() < DAY_START_HOUR) x.setDate(x.getDate() - 1);
+  return dateKey(x);
 }
 
 class Store {
@@ -91,7 +121,7 @@ class Store {
       // Ältere Datensätze könnten das hours-Array noch nicht haben.
       for (const day of Object.values(this.data.days)) {
         if (!Array.isArray(day.hours) || day.hours.length !== 24) {
-          day.hours = Array.from({ length: 24 }, () => ({ p: 0, n: 0, w: 0, i: 0 }));
+          day.hours = Array.from({ length: 24 }, emptyHour);
         }
         day.youtube = day.youtube || {};
         day.apps = day.apps || {};
@@ -101,12 +131,42 @@ class Store {
       // Erster Start oder beschädigte Datei — mit Defaults weitermachen.
     }
 
+    this.migrateDayStart();
+
     // Jeden gesetzten Override erneut anwenden. Deckt zwei Fälle ab: Daten,
     // die vor einem Fix an reclassify() geschrieben wurden, und den Fall,
     // dass der letzte Tick vor dem Neustart schon unter dem Override hätte
     // laufen sollen, aber noch die alte Kategorie trug.
     for (const [key, category] of Object.entries(this.data.overrides)) {
       this.reclassify(key, category);
+    }
+  }
+
+  /**
+   * Umstieg auf den 4-Uhr-Tageswechsel. Läuft bei jedem Start, tut aber nur
+   * beim ersten etwas:
+   *
+   * - Ein Tag "aus der Zukunft" kann nur entstehen, wenn die alte Version
+   *   nach Mitternacht schon den neuen Tag angelegt hat. Nach der neuen Regel
+   *   gehört diese Zeit noch zu heute, also wird sie dort aufaddiert.
+   * - Ist der laufende Tag noch im alten Format, aber zwischen 0 und 4 Uhr
+   *   leer, kann er ohne Konflikt auf den neuen Start umgestellt werden.
+   *   Sonst bleibt er bis zum nächsten Tageswechsel im alten Format.
+   */
+  migrateDayStart() {
+    const today = dayKey();
+    for (const key of Object.keys(this.data.days)) {
+      if (key <= today) continue;
+      mergeDay(this.day(today), this.data.days[key]);
+      delete this.data.days[key];
+    }
+
+    const current = this.data.days[today];
+    if (current && current.dayStart === undefined) {
+      const earlyEmpty = current.hours
+        .slice(0, DAY_START_HOUR)
+        .every((h) => !(h.p || h.n || h.w || h.i));
+      if (earlyEmpty) current.dayStart = DAY_START_HOUR;
     }
   }
 
@@ -164,6 +224,18 @@ class Store {
     if (category === 'productive') { day.productive += seconds; bucket.p += seconds; }
     else if (category === 'wasted') { day.wasted += seconds; bucket.w += seconds; }
     else { day.neutral += seconds; bucket.n += seconds; }
+
+    // Pro Stunde zählt pro Tick genau ein Eintrag: im Browser die Website,
+    // sonst die App — so summieren sich die Einträge zur Stunde auf, statt
+    // Browserzeit doppelt zu führen. Stunden von vor dem Update haben noch
+    // kein items-Feld; das entsteht dann hier.
+    const itemKey = ctx.domain ? `domain:${ctx.domain}` : ctx.app ? `app:${ctx.app}` : null;
+    if (itemKey) {
+      const items = bucket.items || (bucket.items = {});
+      const rec = items[itemKey] || (items[itemKey] = { sec: 0, cat: category });
+      rec.sec += seconds;
+      rec.cat = category;
+    }
 
     if (ctx.app) {
       const rec = day.apps[ctx.app] || (day.apps[ctx.app] = { sec: 0, cat: category });
@@ -238,11 +310,9 @@ class Store {
    * Override würde nur für künftige Ticks greifen, nicht für die schon
    * gezählten Minuten.
    *
-   * Einschränkung: Die stündliche Tagesverlauf-Grafik speichert nicht, welche
-   * App in welcher Stunde lief — nur die Tagessumme pro App. Sie wird darum
-   * bewusst nicht rückwirkend angepasst; alle anderen Ansichten (Heute,
-   * Fokus-Reaktor, Verteilung, Ranglisten, Wochen-/Trend-Charts) schon, weil
-   * die auf den Tagessummen basieren.
+   * Der Tagesverlauf wird mit angepasst, soweit die Stunde weiss, was in ihr
+   * lief (seit dem Update mit den Stunden-Details). Ältere Stunden haben nur
+   * Summen und bleiben, wie sie sind.
    */
   reclassify(key, category) {
     const sep = key.indexOf(':');
@@ -252,6 +322,8 @@ class Store {
     const bucketName = kind === 'domain' ? 'domains' : 'apps';
 
     for (const day of Object.values(this.data.days)) {
+      reclassifyHours(day, kind, wanted, category, this.data.overrides);
+
       const bucket = day[bucketName];
       if (!bucket) continue;
 
@@ -291,9 +363,61 @@ class Store {
       const d = new Date(now);
       d.setDate(now.getDate() - i);
       const key = dayKey(d);
-      out.push({ key, date: d, data: this.data.days[key] || emptyDay() });
+      // date aus dem Schlüssel, nicht d: um 1 Uhr ist d schon Dienstag, der
+      // Tag aber noch Montag — sonst stimmt die Wochentag-Beschriftung nicht.
+      out.push({ key, date: parseDayKey(key), data: this.data.days[key] || emptyDay() });
     }
     return out;
+  }
+}
+
+/** Addiert einen Tagesdatensatz in einen anderen (für migrateDayStart()). */
+function mergeDay(into, from) {
+  for (const f of ['total', 'productive', 'neutral', 'wasted', 'inactive']) {
+    into[f] += from[f] || 0;
+  }
+  for (const map of ['apps', 'domains']) {
+    for (const [name, rec] of Object.entries(from[map] || {})) {
+      const target = into[map][name] || (into[map][name] = { sec: 0, cat: rec.cat });
+      target.sec += rec.sec;
+    }
+  }
+  for (const [id, rec] of Object.entries(from.youtube || {})) {
+    const target = into.youtube[id] || (into.youtube[id] = { sec: 0, title: rec.title });
+    target.sec += rec.sec;
+  }
+  (from.hours || []).forEach((h, i) => {
+    const target = into.hours[i];
+    for (const f of ['p', 'n', 'w', 'i']) target[f] += h[f] || 0;
+    for (const [itemKey, rec] of Object.entries(h.items || {})) {
+      const items = target.items || (target.items = {});
+      const t = items[itemKey] || (items[itemKey] = { sec: 0, cat: rec.cat });
+      t.sec += rec.sec;
+    }
+  });
+}
+
+const HOUR_FIELD = { productive: 'p', neutral: 'n', wasted: 'w' };
+
+/** Teil von Store.reclassify(): verschiebt die Zeit eines Eintrags in jeder
+    Stunde, in der er vorkommt, in die neue Kategorie. */
+function reclassifyHours(day, kind, wanted, category, overrides) {
+  for (const hour of day.hours || []) {
+    if (!hour.items) continue;
+    for (const [itemKey, rec] of Object.entries(hour.items)) {
+      const sep = itemKey.indexOf(':');
+      if (itemKey.slice(0, sep) !== kind) continue;
+      const name = itemKey.slice(sep + 1);
+      if (name.toLowerCase() !== wanted) continue;
+
+      const targetCat = category === 'auto'
+        ? classify(kind === 'domain' ? { domain: name } : { app: name }, overrides).category
+        : category;
+      if (rec.cat === targetCat || !HOUR_FIELD[rec.cat] || !HOUR_FIELD[targetCat]) continue;
+      hour[HOUR_FIELD[rec.cat]] -= rec.sec;
+      hour[HOUR_FIELD[targetCat]] += rec.sec;
+      rec.cat = targetCat;
+    }
   }
 }
 
@@ -304,5 +428,5 @@ function parseDayKey(key) {
 }
 
 module.exports = {
-  Store, dayKey, parseDayKey, emptyDay, DEFAULT_GOALS, DEFAULT_SETTINGS,
+  Store, dayKey, parseDayKey, emptyDay, DAY_START_HOUR, DEFAULT_GOALS, DEFAULT_SETTINGS,
 };

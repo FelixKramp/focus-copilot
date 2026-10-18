@@ -48,6 +48,28 @@ function topYoutube(map, limit = 5) {
 }
 
 /**
+ * Was in jeder Stunde lief, größter Posten zuerst. `null` heisst: die Stunde
+ * stammt von vor dem Update und kennt nur Summen, keine Einträge.
+ */
+function hourItems(hours) {
+  return hours.map((h) => {
+    if (!h.items) return null;
+    return Object.entries(h.items)
+      .map(([itemKey, rec]) => {
+        const sep = itemKey.indexOf(':');
+        return {
+          kind: itemKey.slice(0, sep),
+          name: itemKey.slice(sep + 1),
+          seconds: rec.sec,
+          category: rec.cat,
+        };
+      })
+      .filter((e) => e.seconds > 0)
+      .sort((a, b) => b.seconds - a.seconds);
+  });
+}
+
+/**
  * Serie: wie viele Tage in Folge (bis gestern, plus heute falls schon
  * erreicht) wurde das Produktiv-Ziel geschafft?
  */
@@ -150,7 +172,11 @@ function buildSnapshot(store, tracker, dateKey) {
       limitDaysPerYear: (budgetSeconds * WORK_DAYS_PER_YEAR) / 86400,
       goalHoursPerYear: (goalSeconds * WORK_DAYS_PER_YEAR) / 3600,
     },
-    hours: viewed.hours,
+    // Die Einträge stehen separat in hourItems, damit hours schlank bleibt.
+    hours: viewed.hours.map(({ p, n, w, i }) => ({ p, n, w, i })),
+    hourItems: hourItems(viewed.hours),
+    // Erste Stunde des Tagesverlaufs; ältere Tage liefen noch ab Mitternacht.
+    dayStart: viewed.dayStart || 0,
     last7,
     last14,
     weekScore: {

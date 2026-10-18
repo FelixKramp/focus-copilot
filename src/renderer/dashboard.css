@@ -408,6 +408,44 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 
 .day-hour.is-dim { opacity: 0.4; }
 
+/* Angeklickte Stunde: kräftiger Rahmen als "is-now", damit beide
+   gleichzeitig unterscheidbar bleiben. */
+.day-hour { cursor: pointer; }
+.day-hour.is-empty { cursor: default; }
+.day-hour.is-selected { opacity: 1; }
+.day-hour.is-selected .day-track {
+  box-shadow: inset 0 0 0 1px var(--cyan), 0 0 8px rgba(34, 211, 238, 0.35);
+}
+
+/* Aufschlüsselung der angeklickten Stunde unter der Grafik. */
+.day-detail {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.day-detail[hidden] { display: none; }
+.day-detail-head {
+  display: flex; align-items: baseline; gap: 10px;
+  margin-bottom: 6px;
+}
+.day-detail-title {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.08em; color: var(--text);
+}
+.day-detail-sub { font-size: 10.5px; color: var(--muted); }
+.day-detail-close {
+  margin-left: auto;
+  background: none; border: 0; padding: 0 4px;
+  font-size: 15px; line-height: 1; color: var(--muted-dim);
+  cursor: pointer;
+}
+.day-detail-close:hover { color: var(--cyan); }
+.day-detail .empty { padding: 10px 6px; }
+.day-detail-note {
+  padding: 6px 6px 0;
+  font-family: var(--mono); font-size: 10.5px; color: var(--muted-dim);
+}
+
 .day-axis {
   display: flex;
   gap: 3px;
@@ -545,6 +583,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   font-size: 10.5px; color: var(--muted);
 }
 .tt-total b { font-family: var(--mono); color: var(--text); font-weight: 600; }
+.tt-hint { margin-top: 6px; font-size: 9.5px; color: var(--muted-dim); }
 
 /* ----------------------------------------------------------------- Strip */
 
