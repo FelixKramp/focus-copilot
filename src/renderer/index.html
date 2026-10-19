@@ -346,13 +346,20 @@
   <!-- Design-Auswahl -->
   <div class="ctx theme-menu" id="themeMenu" role="menu" aria-label="Design" hidden>
     <p class="ctx-title">Design</p>
-    <button role="menuitemradio" data-theme="jarvis" aria-checked="true"><span class="swatches swatches--jarvis" aria-hidden="true"><i></i><i></i><i></i></span>JARVIS</button>
-    <button role="menuitemradio" data-theme="jarvis-hell" aria-checked="false"><span class="swatches swatches--jarvis-hell" aria-hidden="true"><i></i><i></i><i></i></span>JARVIS hell</button>
-    <button role="menuitemradio" data-theme="mischpult" aria-checked="false"><span class="swatches swatches--mischpult" aria-hidden="true"><i></i><i></i><i></i></span>Mischpult</button>
-    <button role="menuitemradio" data-theme="tacho" aria-checked="false"><span class="swatches swatches--tacho" aria-hidden="true"><i></i><i></i><i></i></span>Tacho</button>
-    <button role="menuitemradio" data-theme="tacho-dunkel" aria-checked="false"><span class="swatches swatches--tacho-dunkel" aria-hidden="true"><i></i><i></i><i></i></span>Tacho dunkel</button>
+    <div role="group" aria-label="Design">
+      <button role="menuitemradio" data-design="jarvis" aria-checked="true"><span class="swatches swatches--jarvis" aria-hidden="true"><i></i><i></i><i></i></span>JARVIS</button>
+      <button role="menuitemradio" data-design="mischpult" aria-checked="false"><span class="swatches swatches--mischpult" aria-hidden="true"><i></i><i></i><i></i></span>Mischpult</button>
+      <button role="menuitemradio" data-design="tacho" aria-checked="false"><span class="swatches swatches--tacho" aria-hidden="true"><i></i><i></i><i></i></span>Tacho</button>
+    </div>
+    <p class="ctx-title ctx-title--section">Darstellung</p>
+    <div role="group" aria-label="Darstellung">
+      <button role="menuitemradio" data-mode="system" aria-checked="true"><span class="mode-icon mode-icon--system" aria-hidden="true"></span>Wie das System</button>
+      <button role="menuitemradio" data-mode="light" aria-checked="false"><span class="mode-icon mode-icon--light" aria-hidden="true"></span>Hell</button>
+      <button role="menuitemradio" data-mode="dark" aria-checked="false"><span class="mode-icon mode-icon--dark" aria-hidden="true"></span>Dunkel</button>
+    </div>
   </div>
 
+  <script src="themes.js"></script>
   <script src="disc-geometry.js"></script>
   <script src="dashboard.js"></script>
 </body>

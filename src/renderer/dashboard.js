@@ -138,23 +138,29 @@ function renderLeds(score) {
 
 /* ------------------------------------------------------------------ Design */
 
-const THEMES = ['jarvis', 'jarvis-hell', 'mischpult', 'tacho', 'tacho-dunkel'];
-/** Designs ohne HUD-Zierrat: Satzschreibweise, kein Leuchten, keine Laufschrift. */
-const FLAT_THEMES = ['mischpult', 'tacho', 'tacho-dunkel'];
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+/** Ob macOS gerade dunkel ist — für den Modus "Wie das System". */
+const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
 
-/** Setzt das Design. Beim ersten Snapshot sofort, danach als Überblendung. */
-function applyTheme(name) {
-  const theme = THEMES.includes(name) ? name : 'jarvis';
+/**
+ * Setzt Design und Modus (siehe themes.js). Beim ersten Snapshot sofort,
+ * danach als Überblendung — auch wenn macOS selbst hell/dunkel wechselt.
+ */
+function applyTheme(settings = {}) {
+  const { theme: design, mode } = settings;
+  const id = window.Themes.variant(design, mode, systemDark.matches).id;
   const root = document.documentElement;
-  if (root.dataset.theme === theme) return;
+  for (const btn of $('themeMenu').querySelectorAll('[data-design]')) {
+    btn.setAttribute('aria-checked', String(btn.dataset.design === (window.Themes.DESIGNS[design] ? design : 'jarvis')));
+  }
+  for (const btn of $('themeMenu').querySelectorAll('[data-mode]')) {
+    btn.setAttribute('aria-checked', String(btn.dataset.mode === (mode || 'system')));
+  }
+  if (root.dataset.theme === id) return;
   const swap = () => {
-    root.dataset.theme = theme;
-    if (FLAT_THEMES.includes(theme)) root.dataset.flat = '';
+    root.dataset.theme = id;
+    if (window.Themes.FLAT.includes(id)) root.dataset.flat = '';
     else delete root.dataset.flat;
-    for (const btn of $('themeMenu').querySelectorAll('[data-theme]')) {
-      btn.setAttribute('aria-checked', String(btn.dataset.theme === theme));
-    }
   };
   if (root.dataset.theme && document.startViewTransition && !reducedMotion.matches) {
     document.startViewTransition(swap);
@@ -882,8 +888,11 @@ function renderDisc(s) {
   $('discTotW').textContent = fmt(s.today.wasted);
   $('discTotAll').textContent = fmt(s.today.productive + s.today.neutral + s.today.wasted);
 
-  // Spurband: Balken beginnen am Stundenanfang und sind so lang wie die
-  // Minuten — wann genau in der Stunde, weiss die App nicht.
+  // Spurband als Punktraster: je Stunde ein Punkt in der Mitte der Zelle,
+  // seine Fläche entspricht den Minuten. Wann genau in der Stunde etwas lief,
+  // weiss die App nicht — ein Punkt behauptet das auch nicht, ein Balken ab
+  // Stundenanfang schon. Und eine Minute wird ein kleiner Punkt statt eines
+  // Haarstrichs am Zellenrand.
   const { lanes, rest } = s.appLanes || { lanes: [], rest: { names: [], total: 0 } };
   const order = Array.from({ length: 24 }, (_, k) => DG.hourAt(k, dayStart));
   $('lanesNames').innerHTML = lanes.map((l) => (
@@ -892,8 +901,8 @@ function renderDisc(s) {
   $('lanesRows').innerHTML = lanes.map((l) => {
     const cells = order.map((h) => {
       const sec = l.byHour[h] || 0;
-      const w = Math.min(100, (sec / HOUR_SECONDS) * 100);
-      return `<span class="lanes-cell">${sec > 0 ? `<i class="disc-cat-${l.category || 'neutral'}" style="width:${Math.max(4, w).toFixed(1)}%"></i>` : ''}</span>`;
+      const size = Math.sqrt(Math.min(1, sec / HOUR_SECONDS));
+      return `<span class="lanes-cell">${sec > 0 ? `<i class="disc-cat-${l.category || 'neutral'}" style="--s:${size.toFixed(3)}"></i>` : ''}</span>`;
     }).join('');
     return `<div class="lanes-row">${cells}</div>`;
   }).join('') || '<div class="lanes-row"></div>';
@@ -1073,7 +1082,7 @@ document.querySelector('.viewswitch').addEventListener('click', async (e) => {
 
 function render(s) {
   snapshot = s;
-  applyTheme(s.settings && s.settings.theme);
+  applyTheme(s.settings);
   applyView(pendingView || (s.settings && s.settings.view));
   viewedDate = parseDayKeyLocal(s.date.key);
   updateDateNavButtons();
@@ -1347,12 +1356,17 @@ $('btnTheme').addEventListener('click', (e) => {
 });
 
 themeMenu.addEventListener('click', async (e) => {
-  const btn = e.target.closest('[data-theme]');
+  const btn = e.target.closest('[data-design], [data-mode]');
   if (!btn) return;
   e.stopPropagation();
   closeThemeMenu();
-  render(await window.copilot.setSettings({ theme: btn.dataset.theme }));
+  const change = btn.dataset.design ? { theme: btn.dataset.design } : { mode: btn.dataset.mode };
+  render(await window.copilot.setSettings(change));
 });
+
+// macOS wechselt hell/dunkel (z. B. abends automatisch): im Modus "Wie das
+// System" sofort mitgehen, ohne auf den nächsten Snapshot zu warten.
+systemDark.addEventListener('change', () => { if (snapshot) applyTheme(snapshot.settings); });
 
 document.addEventListener('click', (e) => {
   const row = e.target.closest('.rank, .disc-item');

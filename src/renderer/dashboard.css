@@ -880,7 +880,7 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--panel-solid);
   border: 1px solid var(--line-strong);
   border-radius: 5px;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--menu-shadow, 0 18px 44px rgba(0, 0, 0, 0.7));
 }
 .ctx[hidden] { display: none; }
 .ctx-title {
@@ -978,6 +978,16 @@ input[type="range"]::-webkit-slider-thumb {
 /* ----------------------------------------------------------- Design-Menü */
 
 .swatches { display: inline-flex; gap: 3px; margin-right: 2px; }
+.ctx-title--section { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+/* Kreis als Zeichen für den Modus: ganz hell, ganz dunkel, halb und halb. */
+.mode-icon {
+  width: 12px; height: 12px; border-radius: 50%;
+  margin: 0 4px 0 6px;
+  border: 1.5px solid currentColor;
+  flex: none;
+}
+.mode-icon--dark { background: currentColor; }
+.mode-icon--system { background: linear-gradient(90deg, currentColor 50%, transparent 50%); } /* taste-skill-ignore: harte Kante, zeichnet einen halben Kreis */
 .swatches i { width: 9px; height: 9px; border-radius: 2px; }
 /* Feste Farben: die Vorschau zeigt das jeweilige Design, egal welches aktiv ist. */
 .swatches--jarvis i:nth-child(1) { background: #050d11; box-shadow: inset 0 0 0 1px #2d4a52; }
@@ -986,15 +996,9 @@ input[type="range"]::-webkit-slider-thumb {
 .swatches--mischpult i:nth-child(1) { background: #1f1e1c; box-shadow: inset 0 0 0 1px #4a4641; }
 .swatches--mischpult i:nth-child(2) { background: #f2b632; }
 .swatches--mischpult i:nth-child(3) { background: #9be564; }
-.swatches--jarvis-hell i:nth-child(1) { background: #f7fbfc; box-shadow: inset 0 0 0 1px #9fc7d2; }
-.swatches--jarvis-hell i:nth-child(2) { background: #0891b2; }
-.swatches--jarvis-hell i:nth-child(3) { background: #15803d; }
 .swatches--tacho i:nth-child(1) { background: #e9ece9; box-shadow: inset 0 0 0 1px #b9c0b9; }
 .swatches--tacho i:nth-child(2) { background: #1f4fd1; }
 .swatches--tacho i:nth-child(3) { background: #ee5a0b; }
-.swatches--tacho-dunkel i:nth-child(1) { background: #101418; box-shadow: inset 0 0 0 1px #3a434c; }
-.swatches--tacho-dunkel i:nth-child(2) { background: #7b9dff; }
-.swatches--tacho-dunkel i:nth-child(3) { background: #f0883e; }
 /* Haken als gezeichnete Linie statt Schriftzeichen. */
 .theme-menu button[aria-checked="true"]::after {
   content: "";
@@ -1113,7 +1117,7 @@ input[type="range"]::-webkit-slider-thumb {
 [data-flat] .ticker { display: none; }
 [data-flat] .brand-mark { border: 0; border-radius: 0; width: 20px; height: 20px; }
 [data-flat] .brand-mark::after { display: none; }
-[data-theme="mischpult"] .brand-mark-mixer { display: block; width: 100%; height: 100%; fill: var(--accent); }
+[data-theme^="mischpult"] .brand-mark-mixer { display: block; width: 100%; height: 100%; fill: var(--accent); }
 [data-flat] .pulse { animation: none; }
 [data-flat] .donut-arc,
 [data-flat] .goal-dot { filter: none; }
@@ -1168,13 +1172,13 @@ input[type="range"]::-webkit-slider-thumb {
 [data-flat] .empty { font-size: 13px; }
 
 /* Fokus-Reaktor als Kanalzug: links der LED-Pegel, rechts der Wert. */
-[data-theme="mischpult"] #cardReactor .gauge-svg { display: none; }
+[data-theme^="mischpult"] #cardReactor .gauge-svg { display: none; }
 /* Die Karte ist so hoch wie "Heute" daneben. Statt eines leeren Bands
    darunter wächst der Pegel mit. */
-[data-theme="mischpult"] #cardReactor { display: flex; flex-direction: column; }
-[data-theme="mischpult"] #cardReactor .reactor { flex: 1; align-items: stretch; }
-[data-theme="mischpult"] #cardReactor .legend { justify-content: center; }
-[data-theme="mischpult"] #cardReactor .gauge {
+[data-theme^="mischpult"] #cardReactor { display: flex; flex-direction: column; }
+[data-theme^="mischpult"] #cardReactor .reactor { flex: 1; align-items: stretch; }
+[data-theme^="mischpult"] #cardReactor .legend { justify-content: center; }
+[data-theme^="mischpult"] #cardReactor .gauge {
   width: 132px;
   height: auto;
   min-height: 148px;
@@ -1182,12 +1186,12 @@ input[type="range"]::-webkit-slider-thumb {
   align-items: stretch;
   gap: 16px;
 }
-[data-theme="mischpult"] #cardReactor .gauge-label { position: static; flex: 1; justify-content: flex-start; }
-[data-theme="mischpult"] #cardReactor .gauge-label strong { font-size: 40px; line-height: 1; }
-[data-theme="mischpult"] #cardReactor .gauge-label span { font-size: 16px; margin-top: 10px; }
-[data-theme="mischpult"] .gauge--sm .gauge-label strong { font-size: 28px; }
-[data-theme="mischpult"] .gauge--sm .gauge-label span { font-size: 12px; }
-[data-theme="mischpult"] #cardReactor .led-meter {
+[data-theme^="mischpult"] #cardReactor .gauge-label { position: static; flex: 1; justify-content: flex-start; }
+[data-theme^="mischpult"] #cardReactor .gauge-label strong { font-size: 40px; line-height: 1; }
+[data-theme^="mischpult"] #cardReactor .gauge-label span { font-size: 16px; margin-top: 10px; }
+[data-theme^="mischpult"] .gauge--sm .gauge-label strong { font-size: 28px; }
+[data-theme^="mischpult"] .gauge--sm .gauge-label span { font-size: 12px; }
+[data-theme^="mischpult"] #cardReactor .led-meter {
   display: flex;
   flex-direction: column-reverse;
   gap: 3px;
@@ -1197,7 +1201,7 @@ input[type="range"]::-webkit-slider-thumb {
 .led {
   flex: 1;
   border-radius: 1px;
-  background: #2c2a27;
+  background: var(--led-off, #2c2a27);
   /* Ballistik wie am Pult: Pegel springt schnell hoch und fällt langsam ab. */
   transition: background-color 420ms var(--ease-in);
 }
@@ -1212,18 +1216,18 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* Tagesverlauf als LED-Ketten. Die Maske schneidet Spur und Segmente in
    gleich hohe Zellen; unbeleuchtete Zellen sind die leere Spur. */
-[data-theme="mischpult"] .day-track {
+[data-theme^="mischpult"] .day-track {
   gap: 0;
   border-radius: 1px;
   -webkit-mask-image: repeating-linear-gradient(to top, #000 0 5px, transparent 5px 7px); /* taste-skill-ignore: Maske, die Zellen schneidet, keine Farbfläche */
   mask-image: repeating-linear-gradient(to top, #000 0 5px, transparent 5px 7px); /* taste-skill-ignore: Maske, die Zellen schneidet, keine Farbfläche */
 }
-[data-theme="mischpult"] .seg { border-radius: 0; }
+[data-theme^="mischpult"] .seg { border-radius: 0; }
 /* Auswahl und laufende Stunde als Marke unter der Kette — ein Rahmen würde
    von der Maske mit zerschnitten. */
-[data-theme="mischpult"] .day-hour { position: relative; }
-[data-theme="mischpult"] .day-hour.is-now::after,
-[data-theme="mischpult"] .day-hour.is-selected::after {
+[data-theme^="mischpult"] .day-hour { position: relative; }
+[data-theme^="mischpult"] .day-hour.is-now::after,
+[data-theme^="mischpult"] .day-hour.is-selected::after {
   content: "";
   position: absolute;
   left: 1px; right: 1px; bottom: -5px;
@@ -1231,7 +1235,7 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 1px;
   background: var(--muted-dim);
 }
-[data-theme="mischpult"] .day-hour.is-selected::after { background: var(--accent); height: 3px; }
+[data-theme^="mischpult"] .day-hour.is-selected::after { background: var(--accent); height: 3px; }
 
 
 /* ============================================================ JARVIS hell
@@ -1486,3 +1490,104 @@ input[type="range"]::-webkit-slider-thumb {
 .bm-hub { fill: var(--bg); }
 [data-theme^="tacho"] .chart-tooltip { box-shadow: 0 12px 28px rgba(22, 32, 42, 0.16); }
 [data-theme="tacho-dunkel"] .chart-tooltip { box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5); }
+
+/* ======================================================== Mischpult hell
+
+   Dasselbe Pult bei Tageslicht: gebürstetes Hellgrau statt Anthrazit. Die
+   Struktur (LED-Pegel, LED-Ketten, Kanal-Marke) kommt aus den Regeln mit
+   [data-theme^="mischpult"]; hier stehen nur die Farben. LED-Grün und -Rot
+   sind dunkler gesetzt, damit sie auf hellem Grund lesbar bleiben; Bernstein
+   bleibt die Lampenfarbe für Bedienung und Auswahl. */
+
+:root[data-theme="mischpult-hell"] {
+  --bg: #e4e3e0;
+  --bg-deep: #e4e3e0;
+  --panel: #f2f1ee;
+  --panel-solid: #f5f5f4;
+  --line: #d3d0ca;
+  --line-strong: #b5b0a8;
+  --cyan: #c98a0b;
+  --green: #3d8b1e;
+  --green-bright: #3d8b1e;
+  --red: #e3330c;
+  --red-dim: #b3341a;
+  --idle: #7d776e;
+  --text: #1c1b19;
+  --text-strong: #121110;
+  --muted: #57524b;
+  --muted-dim: #6b665e;
+  --mono: "DIN Condensed", ui-monospace, Menlo, monospace;
+  --radius: 4px;
+
+  --accent: #c98a0b;
+  --neutral: #8f8a82;
+  --heading: var(--text);
+  --topbar-bg: #ebeae7;
+  --backdrop: #e4e3e0;
+  --control-bg: #f5f5f4;
+  --datepill-bg: #ebeae7;
+  --sunk: #ebeae7;
+  --hover: #e9e7e3;
+  --hover-strong: #dfdcd7;
+  --icon-bg: #e9e7e3;
+  --ring-track: #dcd9d3;
+  --ring-inner: transparent;
+  --meter-track: #dcd9d3;
+  --range-track: #cfcbc4;
+  --day-track: #dcd9d3;
+  --track-swatch: #dcd9d3;
+  --track-swatch-edge: #b5b0a8;
+  --now-ring: none;
+  --selected-ring: none;
+  --grid: #dcd9d3;
+  --rule: #e2dfda;
+  --trend-line: var(--text);
+  --trend-fill: rgba(201, 138, 11, 0.14);
+  --fill-productive: var(--green);
+  --fill-wasted: var(--red);
+  --ticker-bg: #ebeae7;
+  --scrim: rgba(228, 227, 224, 0.86);
+  --modal-shadow: 0 24px 60px rgba(30, 28, 25, 0.18);
+  --menu-shadow: 0 14px 36px rgba(30, 28, 25, 0.16);
+  --preset-bg: #ebeae7;
+  --scroll-thumb: #cfcbc4;
+  --scroll-thumb-hover: #b5b0a8;
+  --led-off: #d6d3cd;
+
+  --btn-accent-text: #1a1918;
+  --btn-accent-bg: #f2b632;
+  --btn-accent-border: #e0a520;
+  --btn-accent-hover-text: #1a1918;
+  --btn-accent-hover-bg: #ffc64d;
+  --btn-accent-hover-border: #ffc64d;
+
+  --pill-productive: #2f6f15;  --pill-productive-bg: #e1efd6;  --pill-productive-edge: transparent;
+  --pill-neutral: #4c4842;     --pill-neutral-bg: #e2dfda;     --pill-neutral-edge: transparent;
+  --pill-wasted: #a83416;      --pill-wasted-bg: #f6ddd3;      --pill-wasted-edge: transparent;
+  --pill-idle-edge: #cfcbc4;
+
+  --glow-brand-ring: none;
+  --glow-brand-core: none;
+  --glow-pulse: none;
+  --glow-accent-sm: none;
+  --glow-strip: none;
+  --glow-productive: none;
+  --glow-neutral: none;
+  --glow-wasted: none;
+  --glow-bar-productive: none;
+  --glow-bar-wasted: none;
+  --glow-fresh: none;
+  --glow-thumb: none;
+  --text-glow-productive: none;
+  --text-glow-wasted: none;
+  --text-glow-wasted-lg: none;
+  --text-glow-burst: none;
+
+  --label-case: none;
+  --tracking: 0;
+}
+[data-theme="mischpult-hell"] .chart-tooltip { box-shadow: 0 12px 28px rgba(30, 28, 25, 0.16); }
+
+/* Menüschatten der übrigen hellen Varianten. */
+:root[data-theme="jarvis-hell"] { --menu-shadow: 0 14px 36px rgba(8, 40, 52, 0.16); }
+:root[data-theme="tacho"] { --menu-shadow: 0 14px 36px rgba(22, 32, 42, 0.16); }

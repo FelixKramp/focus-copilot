@@ -42,8 +42,19 @@ function describeCurrent(cur) {
   return 'Warte auf Aktivität …';
 }
 
-const THEMES = ['jarvis', 'jarvis-hell', 'mischpult', 'tacho', 'tacho-dunkel'];
-const FLAT_THEMES = ['mischpult', 'tacho', 'tacho-dunkel'];
+/** Ob macOS gerade dunkel ist — für den Modus "Wie das System". */
+const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+let lastSnapshot = null;
+
+/** Dasselbe Design im selben Modus wie im Dashboard (siehe themes.js). */
+function applyTheme(settings = {}) {
+  const id = window.Themes.variant(settings.theme, settings.mode, systemDark.matches).id;
+  const root = document.documentElement;
+  root.dataset.theme = id;
+  if (window.Themes.FLAT.includes(id)) root.dataset.flat = '';
+  else delete root.dataset.flat;
+}
+systemDark.addEventListener('change', () => { if (lastSnapshot) applyTheme(lastSnapshot.settings); });
 
 /** Radien der Mini-Scheibe: eine grosse Nabe, damit der Score hineinpasst. */
 const MINI = { r0: 150, r1: 292 };
@@ -66,11 +77,8 @@ function renderMiniDisc(s) {
 
 function render(s) {
   // Dasselbe Design und dieselbe Ansicht wie im Dashboard.
-  const theme = THEMES.includes(s.settings && s.settings.theme) ? s.settings.theme : 'jarvis';
-  const root = document.documentElement;
-  root.dataset.theme = theme;
-  if (FLAT_THEMES.includes(theme)) root.dataset.flat = '';
-  else delete root.dataset.flat;
+  lastSnapshot = s;
+  applyTheme(s.settings);
   const disc = !!(s.settings && s.settings.view === 'disc');
   document.body.classList.toggle('is-disc', disc);
   if (disc) renderMiniDisc(s);

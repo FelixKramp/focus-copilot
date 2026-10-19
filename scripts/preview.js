@@ -10,16 +10,18 @@
  *
  *   npx electron scripts/preview.js [--out datei.png] [--clip #day] [--date 2026-08-14]
  *                                   [--hover <selektor>] [--click <selektor>] [--theme mischpult]
- *                                   [--view disc] [--eval <js>]
+ *                                   [--view disc] [--eval <js>] [--mode system|light|dark]
+ *                                   [--system dark|light]
  */
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, nativeTheme } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
 const { Store, dayKey } = require('../src/main/store');
 const { buildSnapshot } = require('../src/main/stats');
+const Themes = require('../src/renderer/themes');
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(`--${name}`);
@@ -47,14 +49,28 @@ function stageRealData() {
 
 app.disableHardwareAcceleration();
 app.whenReady().then(async () => {
+  // --system dark|light: so tun, als wäre macOS dunkel bzw. hell — für den
+  // Modus "Wie das System" (--mode system).
+  const SYSTEM = arg('system', '');
+  if (SYSTEM) nativeTheme.themeSource = SYSTEM;
   const dir = stageRealData();
   const store = new Store(dir);
   // Der Tracker wird nur für zwei Felder gebraucht; ein Stub reicht.
   const tracker = { running: true, current: null };
   const snapshot = buildSnapshot(store, tracker, DATE || undefined);
-  // --theme <id>: Design für die Vorschau, unabhängig von der Einstellung.
+  // --theme <design|variante>: Design für die Vorschau, unabhängig von der
+  // Einstellung. Eine Variante wie "mischpult-hell" setzt den Modus gleich mit;
+  // sonst gilt --mode (system, light, dark), Standard dunkel bzw. Tacho hell.
   const THEME = arg('theme', '');
-  if (THEME) snapshot.settings = { ...snapshot.settings, theme: THEME };
+  if (THEME) {
+    // "tacho" ist zugleich Design und helle Variante, "jarvis" die dunkle.
+    const v = Themes.fromVariant(THEME);
+    snapshot.settings = {
+      ...snapshot.settings,
+      theme: v ? v.design : THEME,
+      mode: arg('mode', v ? v.mode : 'dark'),
+    };
+  }
   // --view disc: die Scheibe statt der Übersicht.
   const VIEW = arg('view', '');
   if (VIEW) snapshot.settings = { ...snapshot.settings, view: VIEW };

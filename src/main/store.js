@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { classify } = require('./classify');
 const { focusScore } = require('./score');
+const Themes = require('../renderer/themes');
 
 /**
  * Persistenz. Alles bleibt lokal in einer einzigen JSON-Datei unter
@@ -26,7 +27,10 @@ const DEFAULT_SETTINGS = {
   idleThresholdSeconds: 60,
   // Score und Trendpfeil neben dem Menueleisten-Icon.
   trayScore: true,
+  // Design (jarvis, mischpult, tacho) und Modus (system, light, dark), siehe
+  // src/renderer/themes.js.
   theme: 'jarvis',
+  mode: 'system',
   // Ansicht des Dashboards: 'overview' (Karten) oder 'disc' (Scheibe).
   view: 'overview',
   // Aus: die App lebt nur in der Menüleiste, ohne Dock-Icon und Cmd-Tab-Eintrag.
@@ -35,16 +39,6 @@ const DEFAULT_SETTINGS = {
 
 const VIEWS = ['overview', 'disc'];
 
-/** Die Designs zur Auswahl, mit der Fensterfarbe, die vor dem ersten
-    Zeichnen sichtbar ist (sonst blitzt beim Öffnen das falsche Theme auf). */
-const THEMES = {
-  jarvis: { label: 'JARVIS', background: '#050d11' },
-  'jarvis-hell': { label: 'JARVIS hell', background: '#eaf3f6' },
-  mischpult: { label: 'Mischpult', background: '#141312' },
-  // Tacho: das Design der Scheibe, hell wie Papier oder dunkel für abends.
-  tacho: { label: 'Tacho', background: '#e9ece9' },
-  'tacho-dunkel': { label: 'Tacho dunkel', background: '#101418' },
-};
 
 function defaultRecords() {
   return {
@@ -139,6 +133,7 @@ class Store {
         },
         pendingRecord: parsed.pendingRecord || null,
       };
+      migrateThemeSettings(this.data.settings, parsed.settings || {});
       // Ältere Datensätze könnten das hours-Array noch nicht haben.
       for (const day of Object.values(this.data.days)) {
         if (!Array.isArray(day.hours) || day.hours.length !== 24) {
@@ -404,7 +399,8 @@ class Store {
 
   setSettings(settings) {
     const next = { ...settings };
-    if ('theme' in next && !THEMES[next.theme]) delete next.theme;
+    if ('theme' in next && !Themes.DESIGNS[next.theme]) delete next.theme;
+    if ('mode' in next && !Themes.MODES[next.mode]) delete next.mode;
     if ('view' in next && !VIEWS.includes(next.view)) delete next.view;
     this.data.settings = { ...this.data.settings, ...next };
     this.flush();
@@ -423,6 +419,26 @@ class Store {
       out.push({ key, date: parseDayKey(key), data: this.data.days[key] || emptyDay() });
     }
     return out;
+  }
+}
+
+/**
+ * Bis zur Trennung von Design und Modus war die Variante selbst die
+ * Einstellung ("tacho-dunkel", "jarvis-hell"). Alte Einstellungen werden so
+ * umgerechnet, dass dasselbe Design zu sehen bleibt: Wer JARVIS hatte, behält
+ * es dunkel, statt plötzlich dem System zu folgen.
+ */
+function migrateThemeSettings(settings, saved) {
+  if (saved.mode !== undefined && Themes.DESIGNS[settings.theme]) {
+    if (!Themes.MODES[settings.mode]) settings.mode = DEFAULT_SETTINGS.mode;
+    return;
+  }
+  const old = Themes.fromVariant(saved.theme);
+  if (old) {
+    settings.theme = old.design;
+    settings.mode = old.mode;
+  } else if (!Themes.DESIGNS[settings.theme]) {
+    settings.theme = DEFAULT_SETTINGS.theme;
   }
 }
 
@@ -487,5 +503,5 @@ function parseDayKey(key) {
 }
 
 module.exports = {
-  Store, dayKey, parseDayKey, emptyDay, DAY_START_HOUR, DEFAULT_GOALS, DEFAULT_SETTINGS, THEMES,
+  Store, dayKey, parseDayKey, emptyDay, DAY_START_HOUR, DEFAULT_GOALS, DEFAULT_SETTINGS, VIEWS,
 };

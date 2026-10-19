@@ -4,10 +4,11 @@ const path = require('path');
 const fs = require('fs');
 const { execFile } = require('child_process');
 const {
-  app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, screen, shell, powerMonitor,
+  app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, screen, shell, powerMonitor, nativeTheme,
 } = require('electron');
 
-const { Store, THEMES } = require('./store');
+const { Store } = require('./store');
+const Themes = require('../renderer/themes');
 const { Tracker } = require('./tracker');
 const { buildSnapshot } = require('./stats');
 const { focusScore, scoreTrend } = require('./score');
@@ -44,7 +45,7 @@ function createMainWindow() {
     minHeight: 700,
     show: false,
     title: 'Focus Co-Pilot',
-    backgroundColor: (THEMES[store.data.settings.theme] || THEMES.jarvis).background,
+    backgroundColor: currentVariant().background,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 14, y: 18 },
     webPreferences: {
@@ -249,12 +250,21 @@ function trayContextMenu() {
     },
     {
       label: 'Design',
-      submenu: Object.entries(THEMES).map(([id, theme]) => ({
-        label: theme.label,
-        type: 'radio',
-        checked: store.data.settings.theme === id,
-        click: () => setTheme(id),
-      })),
+      submenu: [
+        ...Object.entries(Themes.DESIGNS).map(([id, design]) => ({
+          label: design.label,
+          type: 'radio',
+          checked: store.data.settings.theme === id,
+          click: () => setLook({ theme: id }),
+        })),
+        { type: 'separator' },
+        ...Object.entries(Themes.MODES).map(([id, label]) => ({
+          label,
+          type: 'radio',
+          checked: store.data.settings.mode === id,
+          click: () => setLook({ mode: id }),
+        })),
+      ],
     },
     { type: 'separator' },
     { label: 'Focus Co-Pilot beenden', click: () => { quitting = true; app.quit(); } },
@@ -281,11 +291,25 @@ function applyDockIcon() {
   }
 }
 
-/** Design wechseln — aus dem Menüleisten-Menü oder aus dem Dashboard. */
-function setTheme(id) {
-  if (!THEMES[id]) return;
-  store.setSettings({ theme: id });
-  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setBackgroundColor(THEMES[id].background);
+/** Die gerade sichtbare Variante aus Design, Modus und Systemdarstellung. */
+function currentVariant() {
+  const { theme, mode } = store.data.settings;
+  return Themes.variant(theme, mode, nativeTheme.shouldUseDarkColors);
+}
+
+/** Fensterfarbe vor dem ersten Zeichnen, sonst blitzt beim Öffnen das falsche Design auf. */
+function syncWindowBackground() {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setBackgroundColor(currentVariant().background);
+}
+
+/** Design und/oder Modus wechseln — aus dem Menüleisten-Menü oder aus dem Dashboard. */
+function setLook({ theme, mode }) {
+  const next = {};
+  if (theme !== undefined && Themes.DESIGNS[theme]) next.theme = theme;
+  if (mode !== undefined && Themes.MODES[mode]) next.mode = mode;
+  if (!Object.keys(next).length) return;
+  store.setSettings(next);
+  syncWindowBackground();
   pushSnapshot();
 }
 
@@ -395,9 +419,9 @@ function registerIpc() {
   });
 
   ipcMain.handle('settings:set', (_e, settings) => {
-    if (settings && 'theme' in settings) {
-      const { theme, ...rest } = settings;
-      setTheme(theme);
+    if (settings && ('theme' in settings || 'mode' in settings)) {
+      const { theme, mode, ...rest } = settings;
+      setLook({ theme, mode });
       settings = rest;
     }
     store.setSettings(settings);
@@ -471,6 +495,10 @@ if (!app.requestSingleInstanceLock()) {
     powerMonitor.on('resume', () => { if (tracker.running) tracker.tick(); });
 
     app.on('activate', () => createMainWindow());
+
+    // Modus "Wie das System": Die Oberflächen folgen selbst über
+    // prefers-color-scheme, hier nur die Fensterfarbe nachziehen.
+    nativeTheme.on('updated', syncWindowBackground);
   });
 
   app.on('window-all-closed', () => {
