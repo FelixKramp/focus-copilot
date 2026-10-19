@@ -14,7 +14,7 @@ const { focusScore } = require('./score');
  *   overrides: { "app:final cut pro": "productive", "domain:youtube.com": "wasted" }
  *   goals:     { productiveMinutes, maxWasteMinutes }
  *   settings:  { notifications, nudgeMinutes, tracking, idleThresholdSeconds,
- *                trayScore, theme, view }
+ *                trayScore, theme, view, dockIcon }
  */
 
 const DEFAULT_GOALS = { productiveMinutes: 180, maxWasteMinutes: 60 };
@@ -29,6 +29,8 @@ const DEFAULT_SETTINGS = {
   theme: 'jarvis',
   // Ansicht des Dashboards: 'overview' (Karten) oder 'disc' (Scheibe).
   view: 'overview',
+  // Aus: die App lebt nur in der Menüleiste, ohne Dock-Icon und Cmd-Tab-Eintrag.
+  dockIcon: false,
 };
 
 const VIEWS = ['overview', 'disc'];
