@@ -6,6 +6,7 @@
         content="default-src 'self'; img-src 'self' data: https://i.ytimg.com https://icons.duckduckgo.com; style-src 'self' 'unsafe-inline'; script-src 'self';" />
   <title>Focus Co-Pilot</title>
   <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="disc.css" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
@@ -23,6 +24,10 @@
     </div>
 
     <div class="topbar-actions">
+      <div class="viewswitch" role="group" aria-label="Ansicht">
+        <button type="button" data-view="overview" aria-pressed="true">Übersicht</button>
+        <button type="button" data-view="disc" aria-pressed="false">Scheibe</button>
+      </div>
       <div class="datepill">
         <button class="chev" id="btnPrevDay" aria-label="Vorheriger Tag">‹</button>
         <span id="dateLabel">—</span>
@@ -35,7 +40,7 @@
     </div>
   </header>
 
-  <main class="grid">
+  <main class="grid" id="viewOverview">
     <!-- Reihe 1 -->
     <section class="card span-4" id="cardReactor">
       <div class="card-head"><h2>Fokus-Reaktor</h2><span class="card-sub">live</span></div>
@@ -197,6 +202,84 @@
     </section>
   </main>
 
+  <!-- Scheibe: der Tag als 24-Stunden-Kreis wie auf der Scheibe eines
+       Fahrtenschreibers, daneben die Spuren der meistgenutzten Apps. -->
+  <main class="disc-view" id="viewDisc" hidden>
+    <div class="disc-sheet">
+      <section class="disc-left" aria-label="Der Tag als Scheibe">
+        <div class="disc-face">
+          <svg class="disc-svg" id="discSvg" viewBox="0 0 600 600" role="img" aria-label="24-Stunden-Scheibe, je Stunde die Minuten nach Kategorie">
+            <path class="disc-track" id="discTrack" />
+            <path class="disc-p" id="discP" />
+            <path class="disc-n" id="discN" />
+            <path class="disc-w" id="discW" />
+            <path class="disc-sel" id="discSel" />
+            <g id="discNeedle">
+              <line class="disc-needle" id="discNeedleLine" />
+              <circle class="disc-needle-tip" id="discNeedleTip" r="4" />
+            </g>
+            <g id="discLabels"></g>
+          </svg>
+          <div class="disc-center">
+            <span class="disc-score"><span id="discScore">0</span> %</span>
+            <span class="disc-score-label" id="discScoreLabel">Fokus heute</span>
+          </div>
+        </div>
+        <p class="disc-caption" id="discCaption"></p>
+      </section>
+
+      <section class="disc-right">
+        <div>
+          <h2 class="disc-title" id="discTitle">—</h2>
+          <p class="disc-subtitle" id="discSubtitle"></p>
+        </div>
+
+        <p class="disc-empty" id="discEmpty" hidden>Noch nichts erfasst.</p>
+
+        <div class="disc-body" id="discBody">
+          <div class="disc-milestones">
+            <p><i class="disc-dot disc-dot--p"></i><span id="discGoalLine"></span></p>
+            <p><i class="disc-dot disc-dot--w"></i><span id="discBudgetLine"></span></p>
+          </div>
+
+          <dl class="disc-totals">
+            <div><dt><i class="disc-swatch disc-swatch--p"></i>Produktiv</dt><dd id="discTotP">0 Min</dd></div>
+            <div><dt><i class="disc-swatch disc-swatch--n"></i>Neutral</dt><dd id="discTotN">0 Min</dd></div>
+            <div><dt><i class="disc-swatch disc-swatch--w"></i>Prokrastination</dt><dd id="discTotW">0 Min</dd></div>
+            <div><dt><i class="disc-swatch disc-swatch--all"></i>Am Mac</dt><dd id="discTotAll">0 Min</dd></div>
+          </dl>
+
+          <div class="lanes-block">
+            <div class="lanes-head">
+              <h3>Spuren</h3>
+              <span>Klick auf eine Stunde zeigt, was lief</span>
+            </div>
+            <p class="lanes-none" id="lanesNone" hidden>Für diesen Tag gibt es keine Spuren. Die App merkt sich erst seit dem Update, was in welcher Stunde lief.</p>
+            <div class="lanes">
+              <span></span>
+              <div class="lanes-ruler" id="lanesRuler"></div>
+              <div class="lanes-names" id="lanesNames"></div>
+              <div class="lanes-field">
+                <div class="lanes-rows" id="lanesRows"></div>
+                <div class="lanes-hits" id="lanesHits"></div>
+              </div>
+            </div>
+            <p class="lanes-more" id="lanesMore"></p>
+          </div>
+
+          <div class="disc-hour">
+            <div class="disc-hour-head">
+              <button type="button" class="disc-step" id="discPrev" aria-label="Stunde davor">‹</button>
+              <h3><span id="discHourLabel">—</span> <span class="disc-hour-total" id="discHourTotal"></span></h3>
+              <button type="button" class="disc-step" id="discNext" aria-label="Stunde danach">›</button>
+            </div>
+            <div class="disc-hour-list" id="discHourList"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
   <footer class="ticker">
     <div class="ticker-track" id="tickerText">Alle Daten bleiben lokal</div>
   </footer>
@@ -265,6 +348,7 @@
     <button role="menuitemradio" data-theme="mischpult" aria-checked="false"><span class="swatches swatches--mischpult" aria-hidden="true"><i></i><i></i><i></i></span>Mischpult</button>
   </div>
 
+  <script src="disc-geometry.js"></script>
   <script src="dashboard.js"></script>
 </body>
 </html>

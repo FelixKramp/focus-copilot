@@ -14,7 +14,8 @@ const {
   classify, domainFromUrl, youtubeIdFromUrl, isIgnoredProcess,
 } = require('../src/main/classify');
 const { Store, dayKey, emptyDay, DAY_START_HOUR } = require('../src/main/store');
-const { buildSnapshot, focusScore } = require('../src/main/stats');
+const { buildSnapshot, focusScore, appLanes } = require('../src/main/stats');
+const Disc = require('../src/renderer/disc-geometry');
 const { scoreTrend } = require('../src/main/score');
 
 let passed = 0;
@@ -584,6 +585,113 @@ check('Design: Standard ist JARVIS, nur bekannte Designs werden gespeichert', ()
   assert.strictEqual(s.data.settings.trayScore, false, 'andere Einstellungen gehen trotzdem durch');
   assert.strictEqual(new Store(dir).data.settings.theme, 'mischpult', 'übersteht einen Neustart');
   assert.strictEqual(buildSnapshot(s, { running: true, current: {} }).settings.theme, 'mischpult');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+console.log('\nScheibe');
+check('Meilensteine: Ziel und Budget merken sich die Uhrzeit, an der sie erreicht wurden', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  s.setGoals({ productiveMinutes: 1, maxWasteMinutes: 1 });
+  s.record(40, 'productive', { app: 'Xcode' });
+  assert.strictEqual(s.day().milestones.goalAt, undefined, 'nach 40 s noch nicht');
+  const t0 = Date.now();
+  s.record(40, 'productive', { app: 'Xcode' });
+  const goalAt = s.day().milestones.goalAt;
+  assert.ok(goalAt >= t0, 'beim Überschreiten gesetzt');
+  s.record(40, 'productive', { app: 'Xcode' });
+  assert.strictEqual(s.day().milestones.goalAt, goalAt, 'ein weiterer Tick ändert ihn nicht');
+
+  s.record(70, 'wasted', { app: 'Safari', domain: 'youtube.com' });
+  assert.ok(s.day().milestones.budgetAt >= t0);
+
+  const snap = buildSnapshot(s, { running: true, current: {} });
+  assert.match(snap.milestones.goalAt, /^\d{1,2}:\d{2}$/);
+  assert.match(snap.milestones.budgetAt, /^\d{1,2}:\d{2}$/);
+
+  s.setGoals({ productiveMinutes: 1, maxWasteMinutes: 1 });
+  assert.strictEqual(s.day().milestones.goalAt, goalAt, 'gleiches Ziel speichern löscht nichts');
+  s.setGoals({ productiveMinutes: 2 });
+  assert.strictEqual(s.day().milestones.goalAt, undefined, 'neues Ziel löscht den Zeitpunkt');
+  assert.ok(s.day().milestones.budgetAt, 'Budget unverändert, bleibt stehen');
+  // Schon über dem neuen Ziel? Dann bleibt der Zeitpunkt unbekannt, statt
+  // auf den nächsten Tick zu springen.
+  s.setGoals({ productiveMinutes: 1 });
+  s.record(10, 'productive', { app: 'Xcode' });
+  assert.strictEqual(s.day().milestones.goalAt, undefined);
+  assert.strictEqual(buildSnapshot(s, { running: true, current: {} }).milestones.goalAt, null);
+
+  s.setOverride('domain:youtube.com', 'productive');
+  assert.strictEqual(s.day().milestones.budgetAt, undefined, 'Umstufen löscht die Meilensteine');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Spurband: höchstens sechs Apps, der Rest wird zusammengefasst', () => {
+  const hours = Array.from({ length: 24 }, () => ({ p: 0, n: 0, w: 0, i: 0, items: {} }));
+  const names = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+  names.forEach((n, idx) => {
+    hours[9].items[`app:${n}`] = { sec: (10 - idx) * 60, cat: 'neutral' };
+    hours[22].items[`app:${n}`] = { sec: 30, cat: 'productive' };
+  });
+  hours[22].items['domain:youtube.com'] = { sec: 5, cat: 'wasted' };
+  const { lanes, rest } = appLanes(hours);
+  assert.strictEqual(lanes.length, 6);
+  assert.deepStrictEqual(lanes.map((l) => l.name), ['A', 'B', 'C', 'D', 'E', 'F']);
+  assert.deepStrictEqual(rest.names, ['G', 'youtube.com']);
+  assert.strictEqual(lanes[0].byHour.length, 24);
+  assert.strictEqual(lanes[0].byHour[9], 600);
+  assert.strictEqual(lanes[0].category, 'neutral', 'Kategorie des größten Stunden-Eintrags');
+  const all = hours.reduce((sum, h) => sum + Object.values(h.items).reduce((a, r) => a + r.sec, 0), 0);
+  const shown = lanes.reduce((sum, l) => sum + l.byHour.reduce((a, b) => a + b, 0), 0);
+  assert.strictEqual(shown + rest.total, all, 'nichts geht verloren');
+
+  const legacy = Array.from({ length: 24 }, () => ({ p: 60, n: 0, w: 0, i: 0 }));
+  assert.deepStrictEqual(appLanes(legacy), { lanes: [], rest: { names: [], total: 0 } });
+});
+
+check('Geometrie: eine volle produktive Stunde reicht bis zum Rand, leere Stunden nur Spur', () => {
+  const hours = Array.from({ length: 24 }, () => ({ p: 0, n: 0, w: 0 }));
+  hours[4].p = 3600;
+  const d = Disc.discPaths(hours, 4);
+  // Speiche 0 (4 Uhr) steht oben: Außenkante bei y = 300 - 248 (gerundet, wegen des Spalts).
+  const ys = [...d.p.matchAll(/[ML](-?[\d.]+),(-?[\d.]+)/g)].map((m) => Number(m[2]));
+  assert.ok(Math.min(...ys) < 300 - Disc.R1 + 1, 'reicht bis R1');
+  assert.strictEqual(d.n, '');
+  assert.strictEqual(d.w, '');
+  assert.strictEqual((d.track.match(/M/g) || []).length, 24, 'Spur für alle 24 Stunden');
+  assert.strictEqual(Disc.discPaths(Array.from({ length: 24 }, () => ({})), 4).p, '');
+});
+
+check('Geometrie: Zeiger und Beschriftung richten sich nach dem Tagesbeginn', () => {
+  const at = (h, m) => { const d = new Date(2026, 9, 18, h, m); return d; };
+  const up = Disc.needle(at(4, 0), 4);
+  assert.strictEqual(up.x1, 300);
+  assert.strictEqual(up.x2, 300);
+  assert.ok(up.y2 < up.y1, 'zeigt nach oben');
+  assert.ok(Math.abs(Disc.dayPosition(at(0, 40), 4) - 20.667) < 0.01, '0:40 ist die 20,67. Position');
+  assert.ok(Math.abs(Disc.dayPosition(at(0, 40), 0) - 0.667) < 0.01, 'mit dayStart 0 ist 0:40 ganz am Anfang');
+  assert.strictEqual(Disc.dayPosition(at(4, 0), 0), 4, 'dayStart 0 verschiebt um vier Positionen');
+  assert.deepStrictEqual(Disc.hourLabels(4).map((l) => l.hour), [4, 7, 10, 13, 16, 19, 22, 1]);
+  assert.deepStrictEqual(Disc.hourLabels(0).map((l) => l.hour), [0, 3, 6, 9, 12, 15, 18, 21]);
+});
+
+check('Geometrie: ein Klick in die Scheibe trifft die richtige Stunde', () => {
+  assert.strictEqual(Disc.hourAtPoint(305, 300 - 150, 4), 4, 'knapp rechts von oben');
+  assert.strictEqual(Disc.hourAtPoint(300 + 150, 302, 4), 10, 'rechts = sechs Stunden später');
+  assert.strictEqual(Disc.hourAtPoint(295, 300 - 150, 4), 3, 'knapp links von oben = letzte Stunde');
+  assert.strictEqual(Disc.hourAtPoint(300, 300, 4), null, 'Mitte trifft nichts');
+  assert.strictEqual(Disc.hourAtPoint(300, 10, 4), null, 'außerhalb trifft nichts');
+});
+
+check('Ansicht: Standard ist die Übersicht, nur bekannte Ansichten werden gespeichert', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  assert.strictEqual(s.data.settings.view, 'overview');
+  s.setSettings({ view: 'disc' });
+  assert.strictEqual(s.data.settings.view, 'disc');
+  s.setSettings({ view: 'kaputt' });
+  assert.strictEqual(s.data.settings.view, 'disc');
+  assert.strictEqual(new Store(dir).data.settings.view, 'disc', 'übersteht einen Neustart');
   fs.rmSync(dir, { recursive: true, force: true });
 });
 

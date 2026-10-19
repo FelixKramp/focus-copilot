@@ -24,10 +24,10 @@
 
 ## Task 0: Vorbereitung
 
-- [ ] PR für `design-umschalter` aufmachen, mergen, lokal `main` aktualisieren.
-- [ ] `git switch -c scheibe-ansicht`
-- [ ] `npm test` muss grün sein, bevor etwas geändert wird.
-- [ ] Archivo (Variable Font mit `wdth`- und `wght`-Achse) von Google Fonts herunterladen, nach `assets/fonts/Archivo[wdth,wght].ttf` legen, `OFL.txt` daneben. In `package.json` prüfen, ob `assets/` ins Build kommt (`build.files`), sonst ergänzen.
+- [x] PR für `design-umschalter` aufmachen, mergen, lokal `main` aktualisieren.
+- [x] `git switch -c scheibe-ansicht`
+- [x] `npm test` muss grün sein, bevor etwas geändert wird.
+- [x] Archivo (Variable Font mit `wdth`- und `wght`-Achse) von Google Fonts herunterladen, nach `assets/fonts/Archivo[wdth,wght].ttf` legen, `OFL.txt` daneben. In `package.json` prüfen, ob `assets/` ins Build kommt (`build.files`), sonst ergänzen.
 
 ## Task 1: Meilensteine im Store
 
@@ -35,62 +35,75 @@ Das Dashboard weiß bisher nicht, *wann* das Ziel erreicht oder das Budget aufge
 
 **Files:** `src/main/store.js`, `scripts/smoke-test.js`
 
-- [ ] In `record()` nach dem Hochzählen prüfen: Wenn `day.productive` gerade über `goals.productiveMinutes * 60` gestiegen ist und `day.milestones.goalAt` fehlt, `goalAt = Date.now()` setzen. Dasselbe für `day.wasted` über `goals.maxWasteMinutes * 60` → `budgetAt`. `emptyDay()` bekommt `milestones: {}`; `load()` ergänzt es bei alten Tagen.
-- [ ] Ändert sich das Ziel (`setGoals`), werden die Meilensteine des heutigen Tages gelöscht und ab dem nächsten Tick neu bestimmt. Bei einem höheren Ziel wäre ein alter Zeitpunkt sonst falsch.
-- [ ] Umstufen (`reclassify`) kann Minuten zwischen Kategorien verschieben: danach ebenfalls die Meilensteine des betroffenen Tages löschen. Bei vergangenen Tagen bleiben sie dann leer; das ist ehrlich.
-- [ ] Tests: Ziel 1 Min, zwei Ticks à 40 s produktiv → `goalAt` gesetzt, ein weiterer Tick ändert ihn nicht. `setGoals` löscht ihn. Budget analog.
+- [x] In `record()` nach dem Hochzählen prüfen: Wenn `day.productive` gerade über `goals.productiveMinutes * 60` gestiegen ist und `day.milestones.goalAt` fehlt, `goalAt = Date.now()` setzen. Dasselbe für `day.wasted` über `goals.maxWasteMinutes * 60` → `budgetAt`. `emptyDay()` bekommt `milestones: {}`; `load()` ergänzt es bei alten Tagen.
+- [x] Ändert sich das Ziel (`setGoals`), werden die Meilensteine des heutigen Tages gelöscht und ab dem nächsten Tick neu bestimmt. Bei einem höheren Ziel wäre ein alter Zeitpunkt sonst falsch.
+- [x] Umstufen (`reclassify`) kann Minuten zwischen Kategorien verschieben: danach ebenfalls die Meilensteine des betroffenen Tages löschen. Bei vergangenen Tagen bleiben sie dann leer; das ist ehrlich.
+- [x] Tests: Ziel 1 Min, zwei Ticks à 40 s produktiv → `goalAt` gesetzt, ein weiterer Tick ändert ihn nicht. `setGoals` löscht ihn. Budget analog.
 
 ## Task 2: Snapshot-Felder `appLanes` und `milestones`
 
 **Files:** `src/main/stats.js`, `scripts/smoke-test.js`
 
-- [ ] `appLanes(hours)`: aus allen `hours[h].items` je App die Minuten pro Stunde sammeln (Schlüssel `app:` oder `domain:` wie in `hourItems`), nach Gesamtzeit sortieren. Rückgabe `{ lanes: [{ kind, name, category, total, byHour: [24 Zahlen in Sekunden] }], rest: { names: [...], total } }` mit höchstens sechs Lanes; alles Weitere landet in `rest`. Die Kategorie einer App ist die ihres größten Stunden-Eintrags.
-- [ ] `milestones`: `{ goalAt, budgetAt }` des angezeigten Tages als Uhrzeit `"15:44"` (lokal) oder `null`.
-- [ ] Beides in `buildSnapshot()` aufnehmen.
-- [ ] Tests: Summe aller `byHour` plus `rest.total` gleich der Summe aller Stunden-Einträge. Bei sieben Apps genau sechs Lanes und eine App in `rest`. Alte Stunden ohne `items` liefern leere Lanes, keinen Fehler.
+- [x] `appLanes(hours)`: aus allen `hours[h].items` je App die Minuten pro Stunde sammeln (Schlüssel `app:` oder `domain:` wie in `hourItems`), nach Gesamtzeit sortieren. Rückgabe `{ lanes: [{ kind, name, category, total, byHour: [24 Zahlen in Sekunden] }], rest: { names: [...], total } }` mit höchstens sechs Lanes; alles Weitere landet in `rest`. Die Kategorie einer App ist die ihres größten Stunden-Eintrags.
+- [x] `milestones`: `{ goalAt, budgetAt }` des angezeigten Tages als Uhrzeit `"15:44"` (lokal) oder `null`.
+- [x] Beides in `buildSnapshot()` aufnehmen.
+- [x] Tests: Summe aller `byHour` plus `rest.total` gleich der Summe aller Stunden-Einträge. Bei sieben Apps genau sechs Lanes und eine App in `rest`. Alte Stunden ohne `items` liefern leere Lanes, keinen Fehler.
 
 ## Task 3: Geometrie-Modul
 
 **Files:** neu `src/renderer/disc-geometry.js`, `scripts/smoke-test.js`, `src/renderer/index.html`
 
-- [ ] Reine Funktionen ohne DOM: `wedge(k, ra, rb)`, `discPaths(hours, dayStart)` → `{ track, p, n, w }` als Pfad-Strings, `selectionPath(hour, dayStart)`, `needle(date, dayStart)` → Linienkoordinaten, `hourLabels(dayStart)` → acht Positionen alle drei Stunden ab Tagesbeginn. Übernahme aus dem Entwurf, aber mit `dayStart` statt fest 4.
-- [ ] Am Dateiende `if (typeof module !== 'undefined') module.exports = { … };`, im Browser hängt es an `window.DiscGeometry`. In `index.html` vor `dashboard.js` einbinden.
-- [ ] Tests: `discPaths` mit einer Stunde 60 Min produktiv → `p` reicht bis R1; leere Stunden → nur Spur. Der Zeiger um 4:00 zeigt bei `dayStart` 4 nach oben (x = Mitte), um 0:40 bei 20,67 Positionen. `dayStart` 0 verschiebt alles um vier Positionen.
+- [x] Reine Funktionen ohne DOM: `wedge(k, ra, rb)`, `discPaths(hours, dayStart)` → `{ track, p, n, w }` als Pfad-Strings, `selectionPath(hour, dayStart)`, `needle(date, dayStart)` → Linienkoordinaten, `hourLabels(dayStart)` → acht Positionen alle drei Stunden ab Tagesbeginn. Übernahme aus dem Entwurf, aber mit `dayStart` statt fest 4.
+- [x] Am Dateiende `if (typeof module !== 'undefined') module.exports = { … };`, im Browser hängt es an `window.DiscGeometry`. In `index.html` vor `dashboard.js` einbinden.
+- [x] Tests: `discPaths` mit einer Stunde 60 Min produktiv → `p` reicht bis R1; leere Stunden → nur Spur. Der Zeiger um 4:00 zeigt bei `dayStart` 4 nach oben (x = Mitte), um 0:40 bei 20,67 Positionen. `dayStart` 0 verschiebt alles um vier Positionen.
 
 ## Task 4: Ansicht bauen (statisch)
 
 **Files:** `src/renderer/index.html`, neu `src/renderer/disc.css`, `src/renderer/dashboard.js`
 
-- [ ] `index.html`: Das bisherige `<main class="grid">` bekommt `id="viewOverview"`. Daneben kommt neu `<main id="viewDisc" hidden>` mit dem Aufbau aus dem Entwurf: links die Scheibe (SVG mit den Pfaden und den acht Beschriftungen, darüber Score und „Fokus heute"), rechts die Überschrift mit Datum, die zwei Sätze zu Ziel und Budget, die vier Summen, das Spurband und die Aufschlüsselung. Texte wörtlich aus dem Entwurf.
-- [ ] `disc.css`: eigene Tokens unter `#viewDisc` (siehe Global Constraints), `@font-face` für Archivo aus `assets/fonts/`. Zahlen mit `font-stretch: 75%` und `tabular-nums`.
-- [ ] `dashboard.js`: `renderDisc(s)` füllt alles aus dem Snapshot. Die Sätze zu Ziel und Budget erscheinen nur, wenn der jeweilige Meilenstein gesetzt ist. Ohne Meilenstein: „Produktiv-Ziel: noch 1 Std 12 Min" bzw. „Budget: noch 20 Min übrig".
-- [ ] Leere Zustände: Tag ohne Daten → Scheibe nur mit Spur, rechts „Noch nichts erfasst." Stunde ohne Einträge → „Nicht am Mac." Alte Stunde → derselbe Satz wie im Tagesverlauf.
-- [ ] Prüfen mit Testdaten: `scripts/make-fake.js` aus der Vorschau-Session nachbauen (Tag mit `items` pro Stunde unter `$HOME/Library/Application Support/Focus Co-Pilot/data.json` in einem Temp-Ordner), dann `HOME=<temp> npx electron scripts/preview.js --date <tag> --out scheibe.png` mit vorübergehend sichtbarer Ansicht.
+- [x] `index.html`: Das bisherige `<main class="grid">` bekommt `id="viewOverview"`. Daneben kommt neu `<main id="viewDisc" hidden>` mit dem Aufbau aus dem Entwurf: links die Scheibe (SVG mit den Pfaden und den acht Beschriftungen, darüber Score und „Fokus heute"), rechts die Überschrift mit Datum, die zwei Sätze zu Ziel und Budget, die vier Summen, das Spurband und die Aufschlüsselung. Texte wörtlich aus dem Entwurf.
+- [x] `disc.css`: eigene Tokens unter `#viewDisc` (siehe Global Constraints), `@font-face` für Archivo aus `assets/fonts/`. Zahlen mit `font-stretch: 75%` und `tabular-nums`.
+- [x] `dashboard.js`: `renderDisc(s)` füllt alles aus dem Snapshot. Die Sätze zu Ziel und Budget erscheinen nur, wenn der jeweilige Meilenstein gesetzt ist. Ohne Meilenstein: „Produktiv-Ziel: noch 1 Std 12 Min" bzw. „Budget: noch 20 Min übrig".
+- [x] Leere Zustände: Tag ohne Daten → Scheibe nur mit Spur, rechts „Noch nichts erfasst." Stunde ohne Einträge → „Nicht am Mac." Alte Stunde → derselbe Satz wie im Tagesverlauf.
+- [x] Prüfen mit Testdaten: `scripts/make-fake.js` aus der Vorschau-Session nachbauen (Tag mit `items` pro Stunde unter `$HOME/Library/Application Support/Focus Co-Pilot/data.json` in einem Temp-Ordner), dann `HOME=<temp> npx electron scripts/preview.js --date <tag> --out scheibe.png` mit vorübergehend sichtbarer Ansicht.
 
 ## Task 5: Interaktion
 
 **Files:** `src/renderer/dashboard.js`, `src/renderer/disc.css`
 
-- [ ] Über dem Spurband liegt eine Reihe von 24 echten `<button>`s (eine pro Stunde, `aria-label="14 bis 15 Uhr anzeigen"`, `aria-pressed`). Klick ruft dieselbe `selectHour(h)` auf wie der Tagesverlauf; die Scheibe zeichnet `selectionPath` neu, die Aufschlüsselung füllt sich.
-- [ ] ‹ und › als Buttons neben der Stundenüberschrift, an den Tagesgrenzen deaktiviert. Pfeiltasten links und rechts machen dasselbe, solange die Scheibe sichtbar ist und kein Eingabefeld den Fokus hat.
-- [ ] Klick auf eine Speiche in der Scheibe selbst: die Pfade sind ein großes SVG; den Winkel aus der Mausposition relativ zur Mitte berechnen, daraus die Stunde. Nur wenn der Abstand zur Mitte zwischen R0 und R1 liegt.
-- [ ] Hover über eine Speiche zeigt den bestehenden Tooltip (`dayTooltipHtml`).
+- [x] Über dem Spurband liegt eine Reihe von 24 echten `<button>`s (eine pro Stunde, `aria-label="14 bis 15 Uhr anzeigen"`, `aria-pressed`). Klick ruft dieselbe `selectHour(h)` auf wie der Tagesverlauf; die Scheibe zeichnet `selectionPath` neu, die Aufschlüsselung füllt sich.
+- [x] ‹ und › als Buttons neben der Stundenüberschrift, an den Tagesgrenzen deaktiviert. Pfeiltasten links und rechts machen dasselbe, solange die Scheibe sichtbar ist und kein Eingabefeld den Fokus hat.
+- [x] Klick auf eine Speiche in der Scheibe selbst: die Pfade sind ein großes SVG; den Winkel aus der Mausposition relativ zur Mitte berechnen, daraus die Stunde. Nur wenn der Abstand zur Mitte zwischen R0 und R1 liegt.
+- [x] Hover über eine Speiche zeigt den bestehenden Tooltip (`dayTooltipHtml`).
 
 ## Task 6: Umschalter Übersicht | Scheibe
 
 **Files:** `src/renderer/index.html`, `src/renderer/dashboard.js`, `src/renderer/dashboard.css`, `src/main/store.js`, `scripts/smoke-test.js`
 
-- [ ] In der Kopfzeile links neben dem Datum ein Segment-Schalter mit zwei echten Buttons „Übersicht" und „Scheibe" (`aria-pressed`). Er passt sich den Designs JARVIS und Mischpult an, so wie die übrigen Knöpfe.
-- [ ] `DEFAULT_SETTINGS.view = 'overview'`, `setSettings` lässt nur `'overview'` und `'disc'` zu (wie bei `theme`). Test dazu.
-- [ ] Wechsel als View Transition wie beim Designwechsel, ohne Animation bei „Bewegung reduzieren".
-- [ ] Das Menüleisten-Fenster bleibt, wie es ist.
+- [x] In der Kopfzeile links neben dem Datum ein Segment-Schalter mit zwei echten Buttons „Übersicht" und „Scheibe" (`aria-pressed`). Er passt sich den Designs JARVIS und Mischpult an, so wie die übrigen Knöpfe.
+- [x] `DEFAULT_SETTINGS.view = 'overview'`, `setSettings` lässt nur `'overview'` und `'disc'` zu (wie bei `theme`). Test dazu.
+- [x] Wechsel als View Transition wie beim Designwechsel, ohne Animation bei „Bewegung reduzieren".
+- [x] Das Menüleisten-Fenster bleibt, wie es ist.
 
 ## Task 7: Prüfen und ausliefern
 
-- [ ] `npm test` grün.
-- [ ] Vorschau beider Ansichten in beiden Designs, die Scheibe mit Testdaten, mit gewählter Stunde und mit einem alten Tag (`dayStart` 0, ohne `items`).
-- [ ] Inspector aus `design-taste-frontend`: Seite mit `scripts/preview.js --dump <ordner>` ablegen und `node ~/.claude/skills/design-taste-frontend/scripts/inspect.mjs --app <ordner>/index.html` laufen lassen; 0 FAIL.
-- [ ] Commit, `npm run install-app`, ein paar Tage benutzen. Erst danach entscheiden, ob die Scheibe die Startansicht wird.
+- [x] `npm test` grün.
+- [x] Vorschau beider Ansichten in beiden Designs, die Scheibe mit Testdaten, mit gewählter Stunde und mit einem alten Tag (`dayStart` 0, ohne `items`).
+- [x] Inspector aus `design-taste-frontend`: Seite mit `scripts/preview.js --dump <ordner>` ablegen und `node ~/.claude/skills/design-taste-frontend/scripts/inspect.mjs --app <ordner>/index.html` laufen lassen; 0 FAIL.
+- [x] Commit, `npm run install-app`, ein paar Tage benutzen. Erst danach entscheiden, ob die Scheibe die Startansicht wird.
+
+## Stand 19.10.2026
+
+Alle Tasks in einer Session umgesetzt, 44 Tests grün. Abweichungen vom Plan:
+
+- **Branch:** `scheibe-ansicht` hängt an `design-umschalter`, nicht an `main`. Der PR für `design-umschalter` ist noch nicht gemacht; beide Branches gehen zusammen nach `main`.
+- **Schrift:** statt Archivo Avenir Next Condensed für die Zahlen und die Systemschrift für Text. Archivo hätte aus dem Netz geladen werden müssen; Avenir liegt auf jedem Mac. Archivo lässt sich später nachrüsten (`assets/fonts/`, `@font-face` in `disc.css`).
+- **Meilensteine:** Werden sie gelöscht, während die Schwelle schon überschritten ist, bleibt der Zeitpunkt leer, und die Scheibe schreibt „Ziel erreicht" ohne Uhrzeit. Ein Zeitpunkt vom nächsten Tick wäre falsch. Gelöscht wird nur, wenn sich der jeweilige Wert wirklich ändert.
+- **Auswahl:** Ohne gewählte Stunde zeigt die Scheibe heute die laufende, an alten Tagen die vollste Stunde. Ein zweiter Klick schliesst in der Scheibe nichts.
+- **Vorschau:** `scripts/preview.js` kann jetzt `--view disc` und `--eval <js>`.
+- **Inspector:** Mischpult 0 FAIL in beiden Ansichten. JARVIS behält seine bekannten FAILs (Verlauf im Hintergrund, 10-px-Labels), die zum Look gehören.
+
+Offen: ein paar Tage benutzen, dann entscheiden, ob die Scheibe Startansicht wird.
 
 ## Offene Fragen (nicht in diesem Plan)
 
