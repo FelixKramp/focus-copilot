@@ -728,6 +728,8 @@ let lastDiscDetailSignature = '';
 /** Aufsummierter Drehwinkel des Auswahlrahmens, damit er den kurzen Weg nimmt. */
 let discSelAngle = null;
 
+/** Wie fmt(), aber ein paar Sekunden sind nicht "0 Min". */
+const fmtAtLeast = (seconds) => (seconds > 0 && seconds < 30 ? 'unter 1 Min' : fmt(seconds));
 const hourRange = (h) => `${h} bis ${(h + 1) % 24} Uhr`;
 const clockNow = () => {
   const d = new Date();
@@ -894,8 +896,8 @@ function renderDisc(s) {
   $('lanesNone').hidden = lanes.length > 0;
   const n = rest.names.length;
   $('lanesMore').textContent = n === 0 ? ''
-    : n <= 2 ? `Dazu ${rest.names.join(' und ')} mit zusammen ${fmt(rest.total)}.`
-      : `Dazu ${rest.names.slice(0, 2).join(', ')} und ${n - 2} weitere mit zusammen ${fmt(rest.total)}.`;
+    : n <= 2 ? `Dazu ${rest.names.join(' und ')} mit zusammen ${fmtAtLeast(rest.total)}.`
+      : `Dazu ${rest.names.slice(0, 2).join(', ')} und ${n - 2} weitere mit zusammen ${fmtAtLeast(rest.total)}.`;
 
   renderDiscSelection(s, false);
 }
@@ -964,14 +966,14 @@ function renderDiscSelection(s, opening) {
     <div class="disc-item" style="--i:${i}" data-key="${escapeHtml(`${item.kind}:${item.name.toLowerCase()}`)}" data-name="${escapeHtml(item.name)}" title="Klicken zum Umstufen">
       <span class="disc-item-name">${escapeHtml(item.name)}</span>
       <span class="disc-item-bar"><i class="disc-cat-${item.category || 'neutral'}" style="width:${Math.max(3, (item.seconds / max) * 100).toFixed(0)}%"></i></span>
-      <span class="disc-item-time">${fmt(item.seconds)}</span>
+      <span class="disc-item-time">${fmtAtLeast(item.seconds)}</span>
     </div>`).join('');
 
   const restItems = items.slice(DISC_DETAIL_LIMIT);
   const listed = items.reduce((sum, e) => sum + e.seconds, 0);
   const notes = [];
   if (restItems.length) {
-    notes.push(`Dazu ${restItems.length} weitere mit zusammen ${fmt(restItems.reduce((sum, e) => sum + e.seconds, 0))}.`);
+    notes.push(`Dazu ${restItems.length} weitere mit zusammen ${fmtAtLeast(restItems.reduce((sum, e) => sum + e.seconds, 0))}.`);
   }
   if (active - listed >= 60) notes.push(`${fmt(active - listed)} ohne Zuordnung.`);
   if (notes.length) html += `<p class="disc-hour-note is-small">${notes.join(' ')}</p>`;
