@@ -40,19 +40,20 @@
    * Pfade für die ganze Scheibe. hours ist nach echter Uhrzeit indiziert
    * (hours[14] = 14 bis 15 Uhr) und trägt Sekunden je Kategorie (p, n, w).
    * Je weiter eine Speiche nach außen reicht, desto länger war man am Mac;
-   * eine volle Stunde reicht bis R1.
+   * eine volle Stunde reicht bis R1. Andere Radien (r0, r1) braucht die
+   * Mini-Scheibe im Menüleisten-Fenster, die eine grössere Nabe hat.
    */
-  function discPaths(hours, dayStart) {
+  function discPaths(hours, dayStart, { r0 = R0, r1 = R1 } = {}) {
     const d = { track: '', p: '', n: '', w: '' };
     for (let k = 0; k < 24; k++) {
-      d.track += wedge(k, R0, R1);
+      d.track += wedge(k, r0, r1);
       const h = hours[hourAt(k, dayStart)];
       if (!h) continue;
-      let r = R0;
+      let r = r0;
       for (const c of ['p', 'n', 'w']) {
         const sec = h[c] || 0;
-        if (sec <= 0 || r >= R1) continue;
-        const rb = Math.min(R1, r + (sec / HOUR_SECONDS) * (R1 - R0));
+        if (sec <= 0 || r >= r1) continue;
+        const rb = Math.min(r1, r + (sec / HOUR_SECONDS) * (r1 - r0));
         d[c] += wedge(k, r, rb);
         r = rb + SEAM;
       }
@@ -71,10 +72,10 @@
   }
 
   /** Zeiger auf jetzt: eine Linie von innen nach außen. */
-  function needle(date, dayStart) {
+  function needle(date, dayStart, { r0 = R0, r1 = R1 } = {}) {
     const deg = dayPosition(date, dayStart) * 15 - 90;
-    const [x1, y1] = pt(R0 - 14, deg);
-    const [x2, y2] = pt(R1 + 10, deg);
+    const [x1, y1] = pt(r0 - 14, deg);
+    const [x2, y2] = pt(r1 + 10, deg);
     return { x1, y1, x2, y2 };
   }
 

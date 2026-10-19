@@ -138,7 +138,9 @@ function renderLeds(score) {
 
 /* ------------------------------------------------------------------ Design */
 
-const THEMES = ['jarvis', 'mischpult'];
+const THEMES = ['jarvis', 'jarvis-hell', 'mischpult', 'tacho', 'tacho-dunkel'];
+/** Designs ohne HUD-Zierrat: Satzschreibweise, kein Leuchten, keine Laufschrift. */
+const FLAT_THEMES = ['mischpult', 'tacho', 'tacho-dunkel'];
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 /** Setzt das Design. Beim ersten Snapshot sofort, danach als Überblendung. */
@@ -148,6 +150,8 @@ function applyTheme(name) {
   if (root.dataset.theme === theme) return;
   const swap = () => {
     root.dataset.theme = theme;
+    if (FLAT_THEMES.includes(theme)) root.dataset.flat = '';
+    else delete root.dataset.flat;
     for (const btn of $('themeMenu').querySelectorAll('[data-theme]')) {
       btn.setAttribute('aria-checked', String(btn.dataset.theme === theme));
     }

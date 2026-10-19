@@ -13,9 +13,18 @@
 
     <header class="head">
       <div class="ring">
-        <svg viewBox="0 0 100 100" aria-hidden="true">
+        <svg class="ring-svg" viewBox="0 0 100 100" aria-hidden="true">
           <circle cx="50" cy="50" r="40" class="ring-track" />
           <circle cx="50" cy="50" r="40" class="ring-value" id="ring" />
+        </svg>
+        <!-- Ansicht "Scheibe": der Tag als kleine Scheibe, Score in der Nabe. -->
+        <svg class="mini-disc" viewBox="0 0 600 600" aria-hidden="true">
+          <circle cx="300" cy="300" r="300" class="mini-face" />
+          <path class="mini-track" id="miniTrack" />
+          <path class="mini-p" id="miniP" />
+          <path class="mini-n" id="miniN" />
+          <path class="mini-w" id="miniW" />
+          <line class="mini-needle" id="miniNeedle" />
         </svg>
         <span id="score">0</span>
       </div>
@@ -77,6 +86,7 @@
     </footer>
   </div>
 
+  <script src="disc-geometry.js"></script>
   <script src="panel.js"></script>
 </body>
 </html>

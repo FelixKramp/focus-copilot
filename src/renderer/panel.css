@@ -1,15 +1,50 @@
 /* Vorschau, die unter dem Menüleisten-Icon aufklappt.
-   Bewusst deckend und ohne backdrop-filter — siehe Kommentar in dashboard.css. */
+   Bewusst deckend und ohne backdrop-filter — siehe Kommentar in dashboard.css.
+   Dieselben fünf Designs wie im Dashboard; die Grundwerte hier sind JARVIS. */
 
 :root {
   --cyan: #22d3ee;
   --green: #4ade80;
+  --green-deep: #22c55e;
   --red: #ff2d55;
   --idle: #64748b;
   --text: #e9f6fa;
+  --text-strong: #eafcff;
+  --heading: #cdf3fb;
   --muted: #8fb4c0;
   --muted-dim: #5d818d;
   --line: rgba(45, 212, 191, 0.16);
+  --edge: rgba(45, 212, 191, 0.24);
+  --edge-hover: rgba(45, 212, 191, 0.4);
+  --surface: #06141a;
+  --surface-glow: radial-gradient(120% 90% at 50% 0%, rgba(34, 211, 238, 0.10), transparent 62%); /* taste-skill-ignore: JARVIS-Look, bewusst */
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.62);
+  --track: rgba(34, 211, 238, 0.13);
+  --bar-track: rgba(34, 211, 238, 0.1);
+  --bar-fill: linear-gradient(90deg, var(--green-deep), var(--green)); /* taste-skill-ignore: JARVIS-Look, bewusst */
+  --button-bg: rgba(34, 211, 238, 0.05);
+  --quit-hover-bg: rgba(255, 45, 85, 0.07);
+  --quit-hover-edge: rgba(255, 45, 85, 0.4);
+
+  --pill-productive: var(--green);  --pill-productive-bg: rgba(74, 222, 128, 0.08);  --pill-productive-edge: rgba(74, 222, 128, 0.42);
+  --pill-neutral: var(--cyan);      --pill-neutral-bg: rgba(34, 211, 238, 0.07);    --pill-neutral-edge: rgba(34, 211, 238, 0.38);
+  --pill-wasted: var(--red);        --pill-wasted-bg: rgba(255, 45, 85, 0.08);      --pill-wasted-edge: rgba(255, 45, 85, 0.42);
+  --pill-idle-edge: rgba(100, 116, 139, 0.38);
+
+  /* Mini-Scheibe */
+  --disc-p: var(--green-deep);
+  --disc-n: var(--cyan);
+  --disc-w: var(--red);
+  --disc-track: rgba(34, 211, 238, 0.09);
+  --disc-face: #0a1c25;
+  --disc-needle: var(--text-strong);
+
+  --glow-ring: drop-shadow(0 0 4px var(--cyan));
+  --glow-pulse: 0 0 6px var(--green);
+  --glow-text-productive: 0 0 10px rgba(74, 222, 128, 0.35);
+  --glow-text-wasted: 0 0 10px rgba(255, 45, 85, 0.3);
+  --glow-bar: 0 0 8px rgba(74, 222, 128, 0.6);
+
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
@@ -30,11 +65,9 @@ body {
   margin: 9px 8px 8px;
   padding: 14px 14px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(45, 212, 191, 0.24);
-  background:
-    radial-gradient(120% 90% at 50% 0%, rgba(34, 211, 238, 0.10), transparent 62%), /* taste-skill-ignore: JARVIS-Look, bewusst */
-    #06141a;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.62);
+  border: 1px solid var(--edge);
+  background: var(--surface-glow), var(--surface);
+  box-shadow: var(--shadow);
 }
 
 /* Kleine Spitze, die zum Menüleisten-Icon zeigt. */
@@ -44,9 +77,9 @@ body {
   left: 50%;
   width: 11px; height: 11px;
   margin-left: -5.5px;
-  background: #06141a;
-  border-left: 1px solid rgba(45, 212, 191, 0.24);
-  border-top: 1px solid rgba(45, 212, 191, 0.24);
+  background: var(--surface);
+  border-left: 1px solid var(--edge);
+  border-top: 1px solid var(--edge);
   transform: rotate(45deg);
 }
 
@@ -55,21 +88,35 @@ body {
 .head { display: flex; align-items: center; gap: 11px; }
 
 .ring { position: relative; width: 44px; height: 44px; flex: none; }
-.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.ring-track { fill: none; stroke: rgba(34, 211, 238, 0.13); stroke-width: 8; }
+.ring > svg { width: 100%; height: 100%; }
+.ring-svg { transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: var(--track); stroke-width: 8; }
 .ring-value {
   fill: none; stroke: var(--cyan); stroke-width: 8; stroke-linecap: round;
-  filter: drop-shadow(0 0 4px var(--cyan));
+  filter: var(--glow-ring);
   transition: stroke-dashoffset 0.5s ease;
 }
 .ring span {
   position: absolute; inset: 0;
   display: grid; place-items: center;
   font-family: var(--mono); font-size: 13px; font-weight: 600;
-  color: #eafcff;
+  color: var(--text-strong);
 }
 
-.head-text h1 { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #cdf3fb; }
+/* In der Ansicht "Scheibe" steht statt des Rings eine kleine Scheibe des
+   Tages; der Score sitzt in ihrer Nabe. */
+.mini-disc { display: none; }
+.is-disc .ring { width: 58px; height: 58px; }
+.is-disc .ring-svg { display: none; }
+.is-disc .mini-disc { display: block; }
+.mini-face { fill: var(--disc-face); }
+.mini-track { fill: var(--disc-track); }
+.mini-p { fill: var(--disc-p); }
+.mini-n { fill: var(--disc-n); }
+.mini-w { fill: var(--disc-w); }
+.mini-needle { stroke: var(--disc-needle); stroke-width: 14; stroke-linecap: round; }
+
+.head-text h1 { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--heading); }
 .head-text p {
   margin-top: 4px;
   font-size: 10.5px; color: var(--muted);
@@ -78,7 +125,7 @@ body {
 
 .pulse {
   width: 5px; height: 5px; border-radius: 50%;
-  background: var(--green); box-shadow: 0 0 6px var(--green);
+  background: var(--green); box-shadow: var(--glow-pulse);
 }
 .pulse.is-paused { background: var(--idle); box-shadow: none; }
 
@@ -108,10 +155,10 @@ body {
   font-size: 8.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-dim);
   margin-bottom: 4px;
 }
-.stat strong { font-family: var(--mono); font-size: 17px; font-weight: 600; color: #eafcff; }
-/* Muss .stat strong überbieten, sonst bleibt alles weiß. */
-.stat strong.is-productive { color: var(--green); text-shadow: 0 0 10px rgba(74, 222, 128, 0.35); }
-.stat strong.is-wasted { color: var(--red); text-shadow: 0 0 10px rgba(255, 45, 85, 0.3); }
+.stat strong { font-family: var(--mono); font-size: 17px; font-weight: 600; color: var(--text-strong); }
+/* Muss .stat strong überbieten, sonst bleibt alles in der Textfarbe. */
+.stat strong.is-productive { color: var(--green); text-shadow: var(--glow-text-productive); }
+.stat strong.is-wasted { color: var(--red); text-shadow: var(--glow-text-wasted); }
 .stat strong.is-idle { color: var(--idle); }
 
 /* ------------------------------------------------------------ Zielbalken */
@@ -122,11 +169,11 @@ body {
 }
 .meter-head b { font-family: var(--mono); color: var(--text); font-weight: 500; }
 
-.bar { height: 3px; background: rgba(34, 211, 238, 0.1); border-radius: 2px; overflow: hidden; }
+.bar { height: 3px; background: var(--bar-track); border-radius: 2px; overflow: hidden; }
 .bar i {
   display: block; height: 100%; width: 0%;
-  background: linear-gradient(90deg, #22c55e, var(--green)); /* taste-skill-ignore: JARVIS-Look, bewusst */
-  box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+  background: var(--bar-fill);
+  box-shadow: var(--glow-bar);
   transition: width 0.5s ease;
 }
 
@@ -154,10 +201,10 @@ body {
   border: 1px solid var(--line); color: var(--muted);
   flex: none;
 }
-.pill.is-productive { color: var(--green); border-color: rgba(74, 222, 128, 0.42); background: rgba(74, 222, 128, 0.08); }
-.pill.is-neutral { color: var(--cyan); border-color: rgba(34, 211, 238, 0.38); background: rgba(34, 211, 238, 0.07); }
-.pill.is-wasted { color: var(--red); border-color: rgba(255, 45, 85, 0.42); background: rgba(255, 45, 85, 0.08); }
-.pill.is-idle { color: var(--idle); border-color: rgba(100, 116, 139, 0.38); }
+.pill.is-productive { color: var(--pill-productive); border-color: var(--pill-productive-edge); background: var(--pill-productive-bg); }
+.pill.is-neutral { color: var(--pill-neutral); border-color: var(--pill-neutral-edge); background: var(--pill-neutral-bg); }
+.pill.is-wasted { color: var(--pill-wasted); border-color: var(--pill-wasted-edge); background: var(--pill-wasted-bg); }
+.pill.is-idle { color: var(--idle); border-color: var(--pill-idle-edge); }
 
 /* ------------------------------------------------------------- Schalter */
 
@@ -172,64 +219,180 @@ body {
   font-family: var(--sans);
   font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--muted);
-  background: rgba(34, 211, 238, 0.05);
+  background: var(--button-bg);
   border: 1px solid var(--line);
   border-radius: 5px;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
-.actions button:hover { color: var(--cyan); border-color: rgba(45, 212, 191, 0.4); }
-.actions .quit:hover { color: var(--red); border-color: rgba(255, 45, 85, 0.4); background: rgba(255, 45, 85, 0.07); }
+.actions button:hover { color: var(--cyan); border-color: var(--edge-hover); }
+.actions .quit:hover { color: var(--red); border-color: var(--quit-hover-edge); background: var(--quit-hover-bg); }
 
-/* =============================================================== Mischpult
-   Gegenstück zum Mischpult-Design im Dashboard (dashboard.css): Anthrazit,
-   Bernstein für Bedienung, LED-Grün und -Rot für Daten, kein Leuchten,
-   keine Versalien, Zahlen in DIN Condensed. */
+/* ============================================================ JARVIS hell */
 
+:root[data-theme="jarvis-hell"] {
+  --cyan: #07778e;
+  --green: #15803d;
+  --green-deep: #15803d;
+  --red: #e11d48;
+  --text: #0b2530;
+  --text-strong: #062029;
+  --heading: #0e7490;
+  --muted: #3e6371;
+  --muted-dim: #4a6b78;
+  --line: rgba(8, 145, 178, 0.18);
+  --edge: rgba(8, 145, 178, 0.3);
+  --edge-hover: rgba(8, 145, 178, 0.5);
+  --surface: #fbfdfe;
+  --surface-glow: radial-gradient(120% 90% at 50% 0%, rgba(8, 145, 178, 0.07), transparent 62%); /* taste-skill-ignore: JARVIS-Look, bewusst */
+  --shadow: 0 18px 40px rgba(8, 40, 52, 0.22);
+  --track: rgba(8, 145, 178, 0.14);
+  --bar-track: rgba(8, 145, 178, 0.12);
+  --bar-fill: var(--green);
+  --button-bg: rgba(8, 145, 178, 0.05);
+  --quit-hover-bg: rgba(225, 29, 72, 0.06);
+  --quit-hover-edge: rgba(225, 29, 72, 0.4);
+  --pill-productive-bg: rgba(21, 128, 61, 0.08);  --pill-productive-edge: rgba(21, 128, 61, 0.4);
+  --pill-neutral-bg: rgba(8, 145, 178, 0.07);     --pill-neutral-edge: rgba(8, 145, 178, 0.38);
+  --pill-wasted-bg: rgba(225, 29, 72, 0.07);      --pill-wasted-edge: rgba(225, 29, 72, 0.38);
+  --disc-n: #0891b2;
+  --disc-track: rgba(8, 145, 178, 0.1);
+  --disc-face: #eef6f8;
+  --glow-ring: none;
+  --glow-pulse: none;
+  --glow-text-productive: none;
+  --glow-text-wasted: none;
+  --glow-bar: none;
+}
+
+/* ===================================================== flache Designs
+   Mischpult und Tacho: kein Leuchten, keine Versalien, Zahlen in einer
+   schmalen Schrift. Die Grössen gelten für alle drei, die Farben je Design. */
+
+[data-flat] .head-text h1 { font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text); }
+[data-flat] .head-text p { font-size: 12px; }
+[data-flat] .trend { font-size: 13px; letter-spacing: 0; }
+[data-flat] .ring span { font-size: 17px; }
+[data-flat] .is-disc .ring span { font-size: 14px; }
+[data-flat] .stat label,
+[data-flat] .row label { font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--muted); }
+/* Schmale Ziffern mit engem Zeilenabstand, sonst passt das Fenster nicht
+   mehr in seine feste Höhe. */
+[data-flat] .stat strong { font-size: 20px; line-height: 1.15; }
+[data-flat] .stat label { margin-bottom: 2px; }
+[data-flat] .stats { margin: 12px 0 10px; padding: 10px 0; gap: 8px 12px; }
+[data-flat] .rows { gap: 9px; margin: 11px 0 12px; }
+[data-flat] .row label { margin-bottom: 2px; }
+[data-flat] .meter-head { font-size: 12px; }
+[data-flat] .meter-head b { font-size: 14px; }
+[data-flat] .row-name { font-size: 13px; }
+[data-flat] .row-time { font-size: 14px; }
+[data-flat] .pill { font-size: 11px; font-weight: 600; letter-spacing: 0; text-transform: none; padding: 3px 8px; border-color: transparent; }
+[data-flat] .pill.is-idle { border-color: var(--pill-idle-edge); }
+[data-flat] .actions button { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; border-radius: 4px; }
+
+/* Mischpult: Anthrazit, Bernstein für Bedienung, LED-Grün und -Rot für Daten. */
 :root[data-theme="mischpult"] {
   --cyan: #f2b632;
   --green: #9be564;
+  --green-deep: #9be564;
   --red: #ff6b47;
   --idle: #8d877e;
   --text: #edebe7;
+  --text-strong: #f3f3f1;
   --muted: #b3afa8;
   --muted-dim: #9c978f;
   --line: #2f2d2a;
+  --edge: #3a3733;
+  --edge-hover: #4a4641;
+  --surface: #1f1e1c;
+  --surface-glow: none;
+  --track: #2c2a27;
+  --bar-track: #2c2a27;
+  --bar-fill: var(--green);
+  --button-bg: #262422;
+  --quit-hover-bg: #35201a;
+  --quit-hover-edge: #5a2e22;
+  --pill-productive: #b5f08a;  --pill-productive-bg: #22301a;
+  --pill-neutral: #d6cfc4;     --pill-neutral-bg: #2c2a27;
+  --pill-wasted: #ff9a80;      --pill-wasted-bg: #35201a;
+  --pill-idle-edge: #3a3733;
+  --disc-n: #6d6862;
+  --disc-track: #2c2a27;
+  --disc-face: #191817;
   --mono: "DIN Condensed", ui-monospace, Menlo, monospace;
+  --glow-ring: none;
+  --glow-pulse: none;
+  --glow-text-productive: none;
+  --glow-text-wasted: none;
+  --glow-bar: none;
 }
-[data-theme="mischpult"] .panel { background: #1f1e1c; border-color: #3a3733; }
-[data-theme="mischpult"] .notch { background: #1f1e1c; border-color: #3a3733; }
-[data-theme="mischpult"] .ring-track { stroke: #2c2a27; }
-[data-theme="mischpult"] .ring-value { filter: none; }
-[data-theme="mischpult"] .ring span { color: #f3f3f1; font-size: 17px; }
-[data-theme="mischpult"] .head-text h1 { font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text); }
-[data-theme="mischpult"] .head-text p { font-size: 12px; }
-[data-theme="mischpult"] .pulse { box-shadow: none; }
-[data-theme="mischpult"] .trend { font-size: 13px; letter-spacing: 0; }
-[data-theme="mischpult"] .stat label,
-[data-theme="mischpult"] .row label { font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--muted); }
-/* DIN Condensed mit engem Zeilenabstand, sonst passt das Fenster nicht
-   mehr in seine feste Höhe. */
-[data-theme="mischpult"] .stat strong { font-size: 20px; line-height: 1.15; }
-[data-theme="mischpult"] .stat strong:not([class]) { color: #f3f3f1; }
-[data-theme="mischpult"] .stat strong.is-productive,
-[data-theme="mischpult"] .stat strong.is-wasted { text-shadow: none; }
-[data-theme="mischpult"] .stat label { margin-bottom: 2px; }
-[data-theme="mischpult"] .rows { gap: 9px; }
-[data-theme="mischpult"] .row label { margin-bottom: 2px; }
-[data-theme="mischpult"] .meter-head { font-size: 12px; }
-[data-theme="mischpult"] .meter-head b { font-size: 14px; }
-[data-theme="mischpult"] .bar { background: #2c2a27; }
-[data-theme="mischpult"] .bar i { background: var(--green); box-shadow: none; }
-[data-theme="mischpult"] .row-name { font-size: 13px; }
-[data-theme="mischpult"] .row-time { font-size: 14px; }
-[data-theme="mischpult"] .pill { font-size: 11px; font-weight: 600; letter-spacing: 0; text-transform: none; padding: 3px 8px; border-color: transparent; }
-[data-theme="mischpult"] .pill.is-productive { color: #b5f08a; background: #22301a; }
-[data-theme="mischpult"] .pill.is-neutral { color: #d6cfc4; background: #2c2a27; }
-[data-theme="mischpult"] .pill.is-wasted { color: #ff9a80; background: #35201a; }
-[data-theme="mischpult"] .pill.is-idle { border-color: #3a3733; }
-[data-theme="mischpult"] .actions button { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; background: #262422; border-radius: 4px; }
-[data-theme="mischpult"] .actions button:hover { border-color: #4a4641; }
-[data-theme="mischpult"] .actions .quit:hover { background: #35201a; border-color: #5a2e22; }
-[data-theme="mischpult"] .stats { margin: 12px 0 10px; padding: 10px 0; gap: 8px 12px; }
-[data-theme="mischpult"] .rows { margin: 11px 0 12px; }
+
+/* Tacho: mattes Papiergrün, Tinte, Kobaltblau und Signalorange. */
+:root[data-theme="tacho"],
+:root[data-theme="tacho-dunkel"] {
+  --mono: "Avenir Next Condensed", "Avenir Next", system-ui, sans-serif;
+  --surface-glow: none;
+  --bar-fill: var(--green);
+  --glow-ring: none;
+  --glow-pulse: none;
+  --glow-text-productive: none;
+  --glow-text-wasted: none;
+  --glow-bar: none;
+}
+:root[data-theme="tacho"] {
+  --cyan: #16202a;
+  --green: #1f4fd1;
+  --green-deep: #1f4fd1;
+  --red: #ee5a0b;
+  --idle: #6b757e;
+  --text: #16202a;
+  --text-strong: #16202a;
+  --muted: #55606b;
+  --muted-dim: #66717b;
+  --line: #d3d8d3;
+  --edge: #c3cac3;
+  --edge-hover: #a9b1a9;
+  --surface: #e9ece9;
+  --shadow: 0 18px 40px rgba(22, 32, 42, 0.22);
+  --track: #dfe3df;
+  --bar-track: #dfe3df;
+  --button-bg: #f7f8f6;
+  --quit-hover-bg: #f9e6da;
+  --quit-hover-edge: #e9b28f;
+  --pill-productive: #1f4fd1;  --pill-productive-bg: #e3e9fb;
+  --pill-neutral: #3f4a55;     --pill-neutral-bg: #dfe3df;
+  --pill-wasted: #b3500f;      --pill-wasted-bg: #f9e6da;
+  --pill-idle-edge: #c3cac3;
+  --disc-n: #a3abb3;
+  --disc-track: #dfe3df;
+  --disc-face: #f7f8f6;
+}
+:root[data-theme="tacho-dunkel"] {
+  --cyan: #e6eaee;
+  --green: #7b9dff;
+  --green-deep: #7b9dff;
+  --red: #f0883e;
+  --idle: #8a949e;
+  --text: #e6eaee;
+  --text-strong: #f3f5f7;
+  --muted: #a4adb6;
+  --muted-dim: #8d97a1;
+  --line: #262d34;
+  --edge: #3a434c;
+  --edge-hover: #4b555f;
+  --surface: #101418;
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.6);
+  --track: #232a32;
+  --bar-track: #232a32;
+  --button-bg: #181d22;
+  --quit-hover-bg: #3a2516;
+  --quit-hover-edge: #6b3f1f;
+  --pill-productive: #a9bfff;  --pill-productive-bg: #1f2a47;
+  --pill-neutral: #c3cad1;     --pill-neutral-bg: #262d34;
+  --pill-wasted: #ffb27a;      --pill-wasted-bg: #3a2516;
+  --pill-idle-edge: #3a434c;
+  --disc-n: #6f7a85;
+  --disc-track: #232a32;
+  --disc-face: #181d22;
+}

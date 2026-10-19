@@ -986,6 +986,15 @@ input[type="range"]::-webkit-slider-thumb {
 .swatches--mischpult i:nth-child(1) { background: #1f1e1c; box-shadow: inset 0 0 0 1px #4a4641; }
 .swatches--mischpult i:nth-child(2) { background: #f2b632; }
 .swatches--mischpult i:nth-child(3) { background: #9be564; }
+.swatches--jarvis-hell i:nth-child(1) { background: #f7fbfc; box-shadow: inset 0 0 0 1px #9fc7d2; }
+.swatches--jarvis-hell i:nth-child(2) { background: #0891b2; }
+.swatches--jarvis-hell i:nth-child(3) { background: #15803d; }
+.swatches--tacho i:nth-child(1) { background: #e9ece9; box-shadow: inset 0 0 0 1px #b9c0b9; }
+.swatches--tacho i:nth-child(2) { background: #1f4fd1; }
+.swatches--tacho i:nth-child(3) { background: #ee5a0b; }
+.swatches--tacho-dunkel i:nth-child(1) { background: #101418; box-shadow: inset 0 0 0 1px #3a434c; }
+.swatches--tacho-dunkel i:nth-child(2) { background: #7b9dff; }
+.swatches--tacho-dunkel i:nth-child(3) { background: #f0883e; }
 /* Haken als gezeichnete Linie statt Schriftzeichen. */
 .theme-menu button[aria-checked="true"]::after {
   content: "";
@@ -997,7 +1006,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 /* Elemente, die nur ein Design hat. */
-.brand-mark-mixer { display: none; }
+.brand-mark-mixer, .brand-mark-disc { display: none; }
 .led-meter { display: none; }
 
 /* =============================================================== Mischpult
@@ -1096,66 +1105,67 @@ input[type="range"]::-webkit-slider-thumb {
   --tracking: 0;
 }
 
-/* Kopfzeile und Karten: HUD-Zierrat weg, die Marke wird zum Kanalpegel. */
-[data-theme="mischpult"] .card::before,
-[data-theme="mischpult"] .card::after,
-[data-theme="mischpult"] .card-head h2::before,
-[data-theme="mischpult"] .ticker { display: none; }
-[data-theme="mischpult"] .brand-mark { border: 0; border-radius: 0; width: 20px; height: 20px; }
-[data-theme="mischpult"] .brand-mark::after { display: none; }
+/* Alle flachen Designs (Mischpult, Tacho): HUD-Zierrat weg, die Marke wird
+   zum Kanalpegel bzw. zur kleinen Scheibe. */
+[data-flat] .card::before,
+[data-flat] .card::after,
+[data-flat] .card-head h2::before,
+[data-flat] .ticker { display: none; }
+[data-flat] .brand-mark { border: 0; border-radius: 0; width: 20px; height: 20px; }
+[data-flat] .brand-mark::after { display: none; }
 [data-theme="mischpult"] .brand-mark-mixer { display: block; width: 100%; height: 100%; fill: var(--accent); }
-[data-theme="mischpult"] .pulse { animation: none; }
-[data-theme="mischpult"] .donut-arc,
-[data-theme="mischpult"] .goal-dot { filter: none; }
-[data-theme="mischpult"] .burst-particle { box-shadow: none; }
+[data-flat] .pulse { animation: none; }
+[data-flat] .donut-arc,
+[data-flat] .goal-dot { filter: none; }
+[data-flat] .burst-particle { box-shadow: none; }
 
 /* Schrift: Satzschreibweise braucht mehr Grösse als gesperrte Versalien,
    und die schmale DIN braucht mehr Grösse als die Monospace. */
-[data-theme="mischpult"] .brand-text h1 { font-size: 15px; font-weight: 600; }
-[data-theme="mischpult"] .brand-text p { font-size: 13px; }
-[data-theme="mischpult"] .btn { font-size: 13px; font-weight: 500; padding: 7px 13px; }
-[data-theme="mischpult"] .btn-accent { font-weight: 600; }
-[data-theme="mischpult"] .datepill { font-size: 15px; letter-spacing: 0.02em; padding: 5px 12px; }
-[data-theme="mischpult"] .card-head h2 { font-size: 14px; font-weight: 600; }
-[data-theme="mischpult"] .card-sub { font-size: 12px; color: var(--muted-dim); }
-[data-theme="mischpult"] .card-note { font-size: 13px; }
-[data-theme="mischpult"] .stat label,
-[data-theme="mischpult"] .proj label,
-[data-theme="mischpult"] .week-score-avg label { font-size: 13px; color: var(--muted); }
-[data-theme="mischpult"] .record-badge label { font-size: 13px; color: var(--muted); }
-[data-theme="mischpult"] .stat strong { font-size: 30px; }
-[data-theme="mischpult"] .proj strong { font-size: 26px; }
-[data-theme="mischpult"] .proj--loud strong { font-size: 30px; }
-[data-theme="mischpult"] .week-score-avg strong { font-size: 34px; }
-[data-theme="mischpult"] .record-badge strong { font-size: 22px; }
-[data-theme="mischpult"] .legend li { font-size: 13px; }
-[data-theme="mischpult"] .legend li b,
-[data-theme="mischpult"] .meter-head b,
-[data-theme="mischpult"] .tt-row b,
-[data-theme="mischpult"] .tt-total b { font-size: 15px; }
-[data-theme="mischpult"] .meter-head { font-size: 13px; }
-[data-theme="mischpult"] .chart-legend span { font-size: 12px; }
-[data-theme="mischpult"] .rank-name { font-size: 13.5px; }
-[data-theme="mischpult"] .rank-time { font-size: 15px; }
-[data-theme="mischpult"] .pill { font-size: 12px; font-weight: 600; padding: 4px 10px; }
-[data-theme="mischpult"] .ctx button { font-size: 13px; font-weight: 500; }
-[data-theme="mischpult"] .ctx-title { font-size: 12px; }
-[data-theme="mischpult"] .preset { font-size: 12px; font-weight: 500; }
-[data-theme="mischpult"] .proj-table th,
-[data-theme="mischpult"] .proj-table td:first-child { font-size: 12px; font-weight: 500; }
-[data-theme="mischpult"] .proj-table td { font-size: 15px; }
-[data-theme="mischpult"] .slider-head b { font-size: 17px; }
-[data-theme="mischpult"] .tt-title { font-size: 12px; }
-[data-theme="mischpult"] .tt-row,
-[data-theme="mischpult"] .tt-total,
-[data-theme="mischpult"] .tt-hint { font-size: 12.5px; }
-[data-theme="mischpult"] .day-axis span { font-size: 12px; letter-spacing: 0; }
-[data-theme="mischpult"] .axis-label { font-family: var(--sans); font-size: 10.5px; }
-[data-theme="mischpult"] .day-detail-title { font-size: 15px; letter-spacing: 0.02em; }
-[data-theme="mischpult"] .day-detail-sub { font-size: 13px; }
-[data-theme="mischpult"] .day-detail-note { font-size: 13px; }
-[data-theme="mischpult"] .record-burst-text { font-family: var(--sans); font-size: 15px; }
-[data-theme="mischpult"] .empty { font-size: 13px; }
+[data-flat] .brand-text h1 { font-size: 15px; font-weight: 600; }
+[data-flat] .brand-text p { font-size: 13px; }
+[data-flat] .btn { font-size: 13px; font-weight: 500; padding: 7px 13px; }
+[data-flat] .btn-accent { font-weight: 600; }
+[data-flat] .datepill { font-size: 15px; letter-spacing: 0.02em; padding: 5px 12px; }
+[data-flat] .card-head h2 { font-size: 14px; font-weight: 600; }
+[data-flat] .card-sub { font-size: 12px; color: var(--muted-dim); }
+[data-flat] .card-note { font-size: 13px; }
+[data-flat] .stat label,
+[data-flat] .proj label,
+[data-flat] .week-score-avg label { font-size: 13px; color: var(--muted); }
+[data-flat] .record-badge label { font-size: 13px; color: var(--muted); }
+[data-flat] .stat strong { font-size: 30px; }
+[data-flat] .proj strong { font-size: 26px; }
+[data-flat] .proj--loud strong { font-size: 30px; }
+[data-flat] .week-score-avg strong { font-size: 34px; }
+[data-flat] .record-badge strong { font-size: 22px; }
+[data-flat] .legend li { font-size: 13px; }
+[data-flat] .legend li b,
+[data-flat] .meter-head b,
+[data-flat] .tt-row b,
+[data-flat] .tt-total b { font-size: 15px; }
+[data-flat] .meter-head { font-size: 13px; }
+[data-flat] .chart-legend span { font-size: 12px; }
+[data-flat] .rank-name { font-size: 13.5px; }
+[data-flat] .rank-time { font-size: 15px; }
+[data-flat] .pill { font-size: 12px; font-weight: 600; padding: 4px 10px; }
+[data-flat] .ctx button { font-size: 13px; font-weight: 500; }
+[data-flat] .ctx-title { font-size: 12px; }
+[data-flat] .preset { font-size: 12px; font-weight: 500; }
+[data-flat] .proj-table th,
+[data-flat] .proj-table td:first-child { font-size: 12px; font-weight: 500; }
+[data-flat] .proj-table td { font-size: 15px; }
+[data-flat] .slider-head b { font-size: 17px; }
+[data-flat] .tt-title { font-size: 12px; }
+[data-flat] .tt-row,
+[data-flat] .tt-total,
+[data-flat] .tt-hint { font-size: 12.5px; }
+[data-flat] .day-axis span { font-size: 12px; letter-spacing: 0; }
+[data-flat] .axis-label { font-family: var(--sans); font-size: 10.5px; }
+[data-flat] .day-detail-title { font-size: 15px; letter-spacing: 0.02em; }
+[data-flat] .day-detail-sub { font-size: 13px; }
+[data-flat] .day-detail-note { font-size: 13px; }
+[data-flat] .record-burst-text { font-family: var(--sans); font-size: 15px; }
+[data-flat] .empty { font-size: 13px; }
 
 /* Fokus-Reaktor als Kanalzug: links der LED-Pegel, rechts der Wert. */
 [data-theme="mischpult"] #cardReactor .gauge-svg { display: none; }
@@ -1222,3 +1232,257 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--muted-dim);
 }
 [data-theme="mischpult"] .day-hour.is-selected::after { background: var(--accent); height: 3px; }
+
+
+/* ============================================================ JARVIS hell
+
+   JARVIS bei Tageslicht: dieselbe HUD-Struktur mit Eckmarken, Versalien und
+   Laufschrift, aber auf hellem Grund. Das Cyan ist abgedunkelt, damit es auf
+   Weiß lesbar bleibt; Leuchten wird zu einem leisen Schimmer oder fällt weg. */
+
+:root[data-theme="jarvis-hell"] {
+  --bg: #eaf3f6;
+  --bg-deep: #e6f0f3;
+  --panel: #fbfdfe;
+  --panel-solid: #ffffff;
+  --line: rgba(8, 145, 178, 0.2);
+  --line-strong: rgba(8, 145, 178, 0.42);
+  --cyan: #07778e;
+  --cyan-dim: #0e7490;
+  --green: #15803d;
+  --green-bright: #16a34a;
+  --red: #e11d48;
+  --red-dim: #be123c;
+  --idle: #64748b;
+  --text: #0b2530;
+  --text-strong: #062029;
+  --muted: #3e6371;
+  --muted-dim: #4a6b78;
+
+  --topbar-bg: #f5fafb;
+  --backdrop:
+    radial-gradient(120% 80% at 50% 8%, rgba(8, 145, 178, 0.08), transparent 58%), /* taste-skill-ignore: JARVIS-Look, bewusst */
+    #e9f2f5;
+  --control-bg: #ffffff;
+  --datepill-bg: #f2f8fa;
+  --sunk: #f0f6f8;
+  --hover: rgba(8, 145, 178, 0.06);
+  --hover-strong: rgba(8, 145, 178, 0.12);
+  --icon-bg: rgba(8, 145, 178, 0.1);
+  --ring-track: rgba(8, 145, 178, 0.12);
+  --ring-inner: rgba(8, 145, 178, 0.14);
+  --meter-track: rgba(8, 145, 178, 0.1);
+  --range-track: rgba(8, 145, 178, 0.18);
+  --day-track: rgba(100, 116, 139, 0.1);
+  --track-swatch: rgba(100, 116, 139, 0.16);
+  --track-swatch-edge: rgba(100, 116, 139, 0.4);
+  --now-ring: inset 0 0 0 1px rgba(8, 145, 178, 0.35);
+  --selected-ring: inset 0 0 0 1.5px var(--cyan);
+  --grid: rgba(8, 145, 178, 0.12);
+  --rule: rgba(8, 145, 178, 0.1);
+  --trend-line: #0e7490;
+  --trend-fill: rgba(8, 145, 178, 0.16);
+  --ticker-bg: #f5fafb;
+  --scrim: rgba(226, 238, 242, 0.84);
+  --modal-shadow: 0 24px 60px rgba(8, 40, 52, 0.18);
+  --preset-bg: rgba(8, 145, 178, 0.05);
+  --scroll-thumb: rgba(8, 145, 178, 0.2);
+  --scroll-thumb-hover: rgba(8, 145, 178, 0.34);
+
+  --btn-accent-text: #15803d;
+  --btn-accent-bg: #ffffff;
+  --btn-accent-border: rgba(21, 128, 61, 0.45);
+  --btn-accent-hover-text: #166534;
+  --btn-accent-hover-bg: rgba(21, 128, 61, 0.08);
+  --btn-accent-hover-border: #15803d;
+
+  --pill-productive: #15803d;  --pill-productive-bg: rgba(21, 128, 61, 0.08);  --pill-productive-edge: rgba(21, 128, 61, 0.4);
+  --pill-neutral: #07778e;     --pill-neutral-bg: rgba(8, 145, 178, 0.07);     --pill-neutral-edge: rgba(8, 145, 178, 0.38);
+  --pill-wasted: #e11d48;      --pill-wasted-bg: rgba(225, 29, 72, 0.07);      --pill-wasted-edge: rgba(225, 29, 72, 0.38);
+  --pill-idle-edge: rgba(100, 116, 139, 0.4);
+
+  --glow-brand-ring: 0 0 8px rgba(8, 145, 178, 0.25);
+  --glow-brand-core: none;
+  --glow-pulse: none;
+  --glow-accent-sm: none;
+  --glow-strip: none;
+  --glow-productive: none;
+  --glow-neutral: none;
+  --glow-wasted: none;
+  --glow-bar-productive: none;
+  --glow-bar-wasted: none;
+  --glow-fresh: none;
+  --glow-thumb: 0 0 6px rgba(8, 145, 178, 0.4);
+  --text-glow-productive: none;
+  --text-glow-wasted: none;
+  --text-glow-wasted-lg: none;
+  --text-glow-burst: none;
+}
+[data-theme="jarvis-hell"] .donut-arc,
+[data-theme="jarvis-hell"] .goal-dot { filter: none; }
+[data-theme="jarvis-hell"] .chart-tooltip { box-shadow: 0 12px 28px rgba(8, 40, 52, 0.16); }
+
+/* ================================================================= Tacho
+
+   Das Design der Scheibe für die ganze App: mattes Papiergrün wie die
+   Scheibe eines Fahrtenschreibers, Tinte statt Leuchtfarbe, Kobaltblau für
+   produktiv, Signalorange für Prokrastination. Ziffern in der schmalen
+   Avenir Next. Als "Tacho dunkel" dieselbe Ordnung für abends. */
+
+:root[data-theme="tacho"],
+:root[data-theme="tacho-dunkel"] {
+  --mono: "Avenir Next Condensed", "Avenir Next", system-ui, sans-serif;
+  --radius: 8px;
+  --label-case: none;
+  --tracking: 0;
+  --ring-inner: transparent;
+  --now-ring: none;
+  --fill-productive: var(--green);
+  --fill-wasted: var(--red);
+  --trend-fill: transparent;
+
+  --glow-brand-ring: none;
+  --glow-brand-core: none;
+  --glow-pulse: none;
+  --glow-accent-sm: none;
+  --glow-strip: none;
+  --glow-productive: none;
+  --glow-neutral: none;
+  --glow-wasted: none;
+  --glow-bar-productive: none;
+  --glow-bar-wasted: none;
+  --glow-fresh: none;
+  --glow-thumb: none;
+  --text-glow-productive: none;
+  --text-glow-wasted: none;
+  --text-glow-wasted-lg: none;
+  --text-glow-burst: none;
+}
+
+:root[data-theme="tacho"] {
+  --bg: #e9ece9;
+  --bg-deep: #e9ece9;
+  --panel: #f7f8f6;
+  --panel-solid: #f7f8f6;
+  --line: #d3d8d3;
+  --line-strong: #b9c0b9;
+  --cyan: #16202a;
+  --green: #1f4fd1;
+  --green-bright: #1f4fd1;
+  --red: #ee5a0b;
+  --red-dim: #c4520f;
+  --idle: #6b757e;
+  --text: #16202a;
+  --text-strong: #16202a;
+  --muted: #55606b;
+  --muted-dim: #66717b;
+
+  --accent: #16202a;
+  --neutral: #a3abb3;
+  --heading: #16202a;
+  --topbar-bg: #e9ece9;
+  --backdrop: #e9ece9;
+  --control-bg: #f7f8f6;
+  --datepill-bg: #f7f8f6;
+  --sunk: #eef1ee;
+  --hover: #eef1ee;
+  --hover-strong: #e1e5e1;
+  --icon-bg: #e1e5e1;
+  --ring-track: #dfe3df;
+  --meter-track: #dfe3df;
+  --range-track: #d3d8d3;
+  --day-track: #e4e8e4;
+  --track-swatch: #dfe3df;
+  --track-swatch-edge: #b9c0b9;
+  --selected-ring: inset 0 0 0 1.5px #16202a;
+  --grid: #dfe3df;
+  --rule: #e1e5e1;
+  --trend-line: #16202a;
+  --ticker-bg: #e9ece9;
+  --scrim: rgba(233, 236, 233, 0.86);
+  --modal-shadow: 0 24px 60px rgba(22, 32, 42, 0.16);
+  --preset-bg: #eef1ee;
+  --scroll-thumb: #c3cac3;
+  --scroll-thumb-hover: #a9b1a9;
+
+  --btn-accent-text: #f7f8f6;
+  --btn-accent-bg: #16202a;
+  --btn-accent-border: #16202a;
+  --btn-accent-hover-text: #ffffff;
+  --btn-accent-hover-bg: #2a3744;
+  --btn-accent-hover-border: #2a3744;
+
+  --pill-productive: #1f4fd1;  --pill-productive-bg: #e3e9fb;  --pill-productive-edge: transparent;
+  --pill-neutral: #3f4a55;     --pill-neutral-bg: #e1e5e1;     --pill-neutral-edge: transparent;
+  --pill-wasted: #b3500f;      --pill-wasted-bg: #f9e6da;      --pill-wasted-edge: transparent;
+  --pill-idle-edge: #c3cac3;
+}
+
+:root[data-theme="tacho-dunkel"] {
+  --bg: #101418;
+  --bg-deep: #101418;
+  --panel: #181d22;
+  --panel-solid: #1e242a;
+  --line: #262d34;
+  --line-strong: #3a434c;
+  --cyan: #e6eaee;
+  --green: #7b9dff;
+  --green-bright: #7b9dff;
+  --red: #f0883e;
+  --red-dim: #c96a26;
+  --idle: #8a949e;
+  --text: #e6eaee;
+  --text-strong: #f3f5f7;
+  --muted: #a4adb6;
+  --muted-dim: #8d97a1;
+
+  --accent: #e6eaee;
+  --neutral: #6f7a85;
+  --heading: #e6eaee;
+  --topbar-bg: #101418;
+  --backdrop: #101418;
+  --control-bg: #181d22;
+  --datepill-bg: #181d22;
+  --sunk: #151a1f;
+  --hover: #1e242a;
+  --hover-strong: #262d34;
+  --icon-bg: #262d34;
+  --ring-track: #232a32;
+  --meter-track: #232a32;
+  --range-track: #2e363e;
+  --day-track: #1c2228;
+  --track-swatch: #232a32;
+  --track-swatch-edge: #3a434c;
+  --selected-ring: inset 0 0 0 1.5px #e6eaee;
+  --grid: #232a32;
+  --rule: #1e242a;
+  --trend-line: #e6eaee;
+  --ticker-bg: #101418;
+  --scrim: rgba(10, 13, 16, 0.84);
+  --modal-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --preset-bg: #1e242a;
+  --scroll-thumb: #2e363e;
+  --scroll-thumb-hover: #3a434c;
+
+  --btn-accent-text: #101418;
+  --btn-accent-bg: #e6eaee;
+  --btn-accent-border: #e6eaee;
+  --btn-accent-hover-text: #101418;
+  --btn-accent-hover-bg: #ffffff;
+  --btn-accent-hover-border: #ffffff;
+
+  --pill-productive: #a9bfff;  --pill-productive-bg: #1f2a47;  --pill-productive-edge: transparent;
+  --pill-neutral: #c3cad1;     --pill-neutral-bg: #262d34;     --pill-neutral-edge: transparent;
+  --pill-wasted: #ffb27a;      --pill-wasted-bg: #3a2516;      --pill-wasted-edge: transparent;
+  --pill-idle-edge: #3a434c;
+}
+
+/* Marke: die kleine Scheibe aus dem Entwurf. */
+[data-theme^="tacho"] .brand-mark-disc { display: block; width: 100%; height: 100%; }
+[data-theme^="tacho"] .brand-mark { width: 24px; height: 24px; }
+.bm-ring { fill: none; stroke: var(--text); stroke-width: 1.5; }
+.bm-p { fill: var(--green); }
+.bm-w { fill: var(--red); }
+.bm-hub { fill: var(--bg); }
+[data-theme^="tacho"] .chart-tooltip { box-shadow: 0 12px 28px rgba(22, 32, 42, 0.16); }
+[data-theme="tacho-dunkel"] .chart-tooltip { box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5); }

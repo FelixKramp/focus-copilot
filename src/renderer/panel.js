@@ -42,10 +42,38 @@ function describeCurrent(cur) {
   return 'Warte auf Aktivität …';
 }
 
+const THEMES = ['jarvis', 'jarvis-hell', 'mischpult', 'tacho', 'tacho-dunkel'];
+const FLAT_THEMES = ['mischpult', 'tacho', 'tacho-dunkel'];
+
+/** Radien der Mini-Scheibe: eine grosse Nabe, damit der Score hineinpasst. */
+const MINI = { r0: 150, r1: 292 };
+
+/** Kleine Scheibe des Tages wie in der Ansicht "Scheibe", ohne Beschriftung. */
+function renderMiniDisc(s) {
+  const G = window.DiscGeometry;
+  const dayStart = s.dayStart || 0;
+  const d = G.discPaths(s.hours, dayStart, MINI);
+  $('miniTrack').setAttribute('d', d.track);
+  $('miniP').setAttribute('d', d.p);
+  $('miniN').setAttribute('d', d.n);
+  $('miniW').setAttribute('d', d.w);
+  // Der Zeiger läuft nur über die Speichen, nicht durch die Zahl in der Nabe.
+  const n = G.needle(new Date(), dayStart, { r0: MINI.r0 + 14, r1: MINI.r1 - 10 });
+  const line = $('miniNeedle');
+  line.setAttribute('x1', n.x1); line.setAttribute('y1', n.y1);
+  line.setAttribute('x2', n.x2); line.setAttribute('y2', n.y2);
+}
+
 function render(s) {
-  // Dasselbe Design wie im Dashboard.
-  const theme = s.settings && s.settings.theme === 'mischpult' ? 'mischpult' : 'jarvis';
-  document.documentElement.dataset.theme = theme;
+  // Dasselbe Design und dieselbe Ansicht wie im Dashboard.
+  const theme = THEMES.includes(s.settings && s.settings.theme) ? s.settings.theme : 'jarvis';
+  const root = document.documentElement;
+  root.dataset.theme = theme;
+  if (FLAT_THEMES.includes(theme)) root.dataset.flat = '';
+  else delete root.dataset.flat;
+  const disc = !!(s.settings && s.settings.view === 'disc');
+  document.body.classList.toggle('is-disc', disc);
+  if (disc) renderMiniDisc(s);
 
   const r = 40;
   const circumference = 2 * Math.PI * r;
