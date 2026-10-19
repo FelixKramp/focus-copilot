@@ -16,6 +16,8 @@
       <span class="brand-mark" aria-hidden="true">
         <!-- Mischpult-Marke: drei Kanalpegel. JARVIS blendet sie aus. -->
         <svg class="brand-mark-mixer" viewBox="0 0 18 18"><rect x="2" y="7" width="3" height="9" rx="0.5" /><rect x="7.5" y="2" width="3" height="14" rx="0.5" /><rect x="13" y="10" width="3" height="6" rx="0.5" /></svg>
+        <!-- Tacho-Marke: eine kleine Scheibe mit zwei Speichen. -->
+        <svg class="brand-mark-disc" viewBox="0 0 26 26"><circle cx="13" cy="13" r="11.5" class="bm-ring" /><path d="M13 13 L13 2.5 A10.5 10.5 0 0 1 22.6 9.2 Z" class="bm-p" /><path d="M13 13 L22.6 9.2 A10.5 10.5 0 0 1 20.4 20.4 Z" class="bm-w" /><circle cx="13" cy="13" r="3" class="bm-hub" /></svg>
       </span>
       <div class="brand-text">
         <h1>Fokus Co-Pilot</h1>
@@ -345,7 +347,10 @@
   <div class="ctx theme-menu" id="themeMenu" role="menu" aria-label="Design" hidden>
     <p class="ctx-title">Design</p>
     <button role="menuitemradio" data-theme="jarvis" aria-checked="true"><span class="swatches swatches--jarvis" aria-hidden="true"><i></i><i></i><i></i></span>JARVIS</button>
+    <button role="menuitemradio" data-theme="jarvis-hell" aria-checked="false"><span class="swatches swatches--jarvis-hell" aria-hidden="true"><i></i><i></i><i></i></span>JARVIS hell</button>
     <button role="menuitemradio" data-theme="mischpult" aria-checked="false"><span class="swatches swatches--mischpult" aria-hidden="true"><i></i><i></i><i></i></span>Mischpult</button>
+    <button role="menuitemradio" data-theme="tacho" aria-checked="false"><span class="swatches swatches--tacho" aria-hidden="true"><i></i><i></i><i></i></span>Tacho</button>
+    <button role="menuitemradio" data-theme="tacho-dunkel" aria-checked="false"><span class="swatches swatches--tacho-dunkel" aria-hidden="true"><i></i><i></i><i></i></span>Tacho dunkel</button>
   </div>
 
   <script src="disc-geometry.js"></script>

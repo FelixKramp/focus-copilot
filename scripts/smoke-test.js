@@ -13,7 +13,7 @@ const path = require('path');
 const {
   classify, domainFromUrl, youtubeIdFromUrl, isIgnoredProcess,
 } = require('../src/main/classify');
-const { Store, dayKey, emptyDay, DAY_START_HOUR } = require('../src/main/store');
+const { Store, dayKey, emptyDay, DAY_START_HOUR, THEMES } = require('../src/main/store');
 const { buildSnapshot, focusScore, appLanes } = require('../src/main/stats');
 const Disc = require('../src/renderer/disc-geometry');
 const { scoreTrend } = require('../src/main/score');
@@ -586,6 +586,26 @@ check('Design: Standard ist JARVIS, nur bekannte Designs werden gespeichert', ()
   assert.strictEqual(new Store(dir).data.settings.theme, 'mischpult', 'übersteht einen Neustart');
   assert.strictEqual(buildSnapshot(s, { running: true, current: {} }).settings.theme, 'mischpult');
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Design: alle fünf Varianten lassen sich wählen und haben eine Fensterfarbe', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  for (const id of ['jarvis', 'jarvis-hell', 'mischpult', 'tacho', 'tacho-dunkel']) {
+    s.setSettings({ theme: id });
+    assert.strictEqual(s.data.settings.theme, id);
+    assert.match(THEMES[id].background, /^#[0-9a-f]{6}$/);
+  }
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Geometrie: die Mini-Scheibe nutzt eigene Radien', () => {
+  const hours = Array.from({ length: 24 }, () => ({ p: 0, n: 0, w: 0 }));
+  hours[4].p = 3600;
+  const d = Disc.discPaths(hours, 4, { r0: 150, r1: 292 });
+  assert.ok(d.p.includes('A292 292'), 'reicht bis zum eigenen Rand');
+  assert.ok(d.p.includes('A150 150'), 'beginnt an der eigenen Nabe');
+  assert.ok(d.track.includes('A150 150') && !d.track.includes('A92 92'));
 });
 
 console.log('\nScheibe');

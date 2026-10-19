@@ -37,7 +37,11 @@ const VIEWS = ['overview', 'disc'];
     Zeichnen sichtbar ist (sonst blitzt beim Öffnen das falsche Theme auf). */
 const THEMES = {
   jarvis: { label: 'JARVIS', background: '#050d11' },
+  'jarvis-hell': { label: 'JARVIS hell', background: '#eaf3f6' },
   mischpult: { label: 'Mischpult', background: '#141312' },
+  // Tacho: das Design der Scheibe, hell wie Papier oder dunkel für abends.
+  tacho: { label: 'Tacho', background: '#e9ece9' },
+  'tacho-dunkel': { label: 'Tacho dunkel', background: '#101418' },
 };
 
 function defaultRecords() {

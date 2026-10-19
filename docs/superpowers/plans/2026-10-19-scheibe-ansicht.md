@@ -105,10 +105,12 @@ Alle Tasks in einer Session umgesetzt, 44 Tests grün. Abweichungen vom Plan:
 
 Offen: ein paar Tage benutzen, dann entscheiden, ob die Scheibe Startansicht wird.
 
+**Nachtrag 19.10. (Branch `designs-hell-dunkel`):** Design und Ansicht sind jetzt unabhängig. Fünf Designs (JARVIS, JARVIS hell, Mischpult, Tacho, Tacho dunkel) färben Übersicht, Scheibe, Kopfzeile und Menüleisten-Fenster. „Tacho" ist die Palette der Scheibe als eigenes Design, das Orange ist dabei satter geworden (#ee5a0b). In der Ansicht „Scheibe" zeigt das Menüleisten-Fenster eine Mini-Scheibe statt des Rings; das Fenster ist dafür 404 statt 392 px hoch.
+
 ## Offene Fragen (nicht in diesem Plan)
 
-- Soll die Scheibe auch in JARVIS und Mischpult erscheinen, oder bleibt sie bewusst hell?
+- ~~Soll die Scheibe auch in JARVIS und Mischpult erscheinen?~~ Ja, seit dem Nachtrag.
 - Die Wochen-Ringe aus Entwurf A sind aus Platzgründen weggefallen. Gehören sie unter die Scheibe?
-- Wird die Scheibe die Startansicht, und braucht dann das Menüleisten-Fenster eine Mini-Scheibe?
+- Wird die Scheibe die Startansicht? (Die Mini-Scheibe im Menüleisten-Fenster gibt es schon.)
 
 **Umfang:** etwa zwei Sessions. Sinnvoller Schnitt: Session 1 bis einschließlich Task 4 (die Ansicht steht mit echten Daten), Session 2 Interaktion, Umschalter, Prüfen.

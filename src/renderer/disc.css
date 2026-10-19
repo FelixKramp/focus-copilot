@@ -1,7 +1,7 @@
 /* Focus Co-Pilot — Ansicht "Scheibe".
-   Der Tag als Scheibe eines Fahrtenschreibers: ein helles Blatt, das in beiden
-   Designs gleich bleibt, wie ein Stück Papier auf dem Pult. Eigene Farben,
-   eigene Schrift; die Bewegungs-Tokens kommen aus dashboard.css. */
+   Der Tag als Scheibe eines Fahrtenschreibers. Jedes Design färbt sie in
+   seinen eigenen Farben (unten); die Grundwerte hier sind "Tacho", das
+   helle Papier aus dem Entwurf. Die Bewegungs-Tokens kommen aus dashboard.css. */
 
 #viewDisc {
   --d-ground: #e9ece9;
@@ -10,13 +10,17 @@
   --d-grey: #55606b;
   --d-productive: #1f4fd1;
   --d-neutral: #a3abb3;
-  --d-wasted: #e0661c;
+  --d-wasted: #ee5a0b;
   --d-track: #dfe3df;
   --d-line: #d3d8d3;
   --d-lane-line: #dde1dd;
   --d-control-edge: #c3cac3;
   --d-hover: #e1e5e1;
   --d-selected: rgba(22, 32, 42, 0.07);
+  --d-hit-hover: rgba(22, 32, 42, 0.05);
+  --d-sel: var(--d-ink);
+  --d-focus: var(--d-productive);
+  --d-sheet-edge: transparent;
 
   /* Text in der Systemschrift wie im Rest der App; die Zahlen bekommen die
      schmale Avenir Next, die auf jedem Mac liegt. Mehr Schriften braucht es nicht. */
@@ -44,6 +48,7 @@
   gap: 44px;
   padding: 28px 40px 32px;
   border-radius: 10px;
+  border: 1px solid var(--d-sheet-edge);
   background: var(--d-ground);
   color: var(--d-ink);
   font-family: var(--d-sans);
@@ -77,7 +82,7 @@
    so wandert er beim Weiterschalten um die Mitte, statt zu springen. */
 .disc-sel {
   fill: none;
-  stroke: var(--d-ink);
+  stroke: var(--d-sel);
   stroke-width: 2.5;
   transform-box: view-box;
   transform-origin: 300px 300px;
@@ -189,8 +194,8 @@
   cursor: pointer;
   transition: background-color var(--t-quick) var(--ease-out), box-shadow var(--t-quick) var(--ease-out);
 }
-.lanes-hits button:hover { background: rgba(22, 32, 42, 0.05); }
-.lanes-hits button[aria-pressed="true"] { background: var(--d-selected); box-shadow: inset 0 0 0 1.5px var(--d-ink); }
+.lanes-hits button:hover { background: var(--d-hit-hover); }
+.lanes-hits button[aria-pressed="true"] { background: var(--d-selected); box-shadow: inset 0 0 0 1.5px var(--d-sel); }
 
 .lanes-more { margin-left: 138px; font-size: 13px; color: var(--d-grey); min-height: 18px; }
 
@@ -242,7 +247,98 @@
 .disc-cat-neutral { background: var(--d-neutral); }
 .disc-cat-wasted { background: var(--d-wasted); }
 
-#viewDisc :focus-visible { outline: 2px solid var(--d-productive); outline-offset: 1px; }
+#viewDisc :focus-visible { outline: 2px solid var(--d-focus); outline-offset: 1px; }
+
+/* ------------------------------------------------- Scheibe je Design */
+
+/* Tacho: das Blatt ist der Fenstergrund selbst, ohne Kante. */
+[data-theme="tacho-dunkel"] #viewDisc {
+  --d-ground: #101418;
+  --d-surface: #181d22;
+  --d-ink: #e6eaee;
+  --d-grey: #a4adb6;
+  --d-productive: #7b9dff;
+  --d-neutral: #6f7a85;
+  --d-wasted: #f0883e;
+  --d-track: #232a32;
+  --d-line: #262d34;
+  --d-lane-line: #20262d;
+  --d-control-edge: #3a434c;
+  --d-hover: #262d34;
+  --d-selected: rgba(230, 234, 238, 0.08);
+  --d-hit-hover: rgba(230, 234, 238, 0.05);
+}
+
+/* JARVIS: die Scheibe als HUD-Instrument, Grün, Cyan und Rot auf Petrol. */
+[data-theme="jarvis"] #viewDisc {
+  --d-ground: #0a1c25;
+  --d-surface: #071319;
+  --d-ink: #e9f6fa;
+  --d-grey: #8fb4c0;
+  --d-productive: #22c55e;
+  --d-neutral: #22d3ee;
+  --d-wasted: #ff2d55;
+  --d-track: rgba(34, 211, 238, 0.07);
+  --d-line: rgba(45, 212, 191, 0.16);
+  --d-lane-line: rgba(45, 212, 191, 0.1);
+  --d-control-edge: rgba(45, 212, 191, 0.3);
+  --d-hover: rgba(34, 211, 238, 0.1);
+  --d-selected: rgba(34, 211, 238, 0.1);
+  --d-hit-hover: rgba(34, 211, 238, 0.06);
+  --d-sel: #22d3ee;
+  --d-focus: #22d3ee;
+  --d-sheet-edge: rgba(45, 212, 191, 0.16);
+  --d-num: var(--mono);
+}
+[data-theme="jarvis-hell"] #viewDisc {
+  --d-ground: #fbfdfe;
+  --d-surface: #eef6f8;
+  --d-ink: #0b2530;
+  --d-grey: #3e6371;
+  --d-productive: #15803d;
+  --d-neutral: #0891b2;
+  --d-wasted: #e11d48;
+  --d-track: rgba(8, 145, 178, 0.09);
+  --d-line: rgba(8, 145, 178, 0.2);
+  --d-lane-line: rgba(8, 145, 178, 0.12);
+  --d-control-edge: rgba(8, 145, 178, 0.35);
+  --d-hover: rgba(8, 145, 178, 0.1);
+  --d-selected: rgba(8, 145, 178, 0.08);
+  --d-hit-hover: rgba(8, 145, 178, 0.05);
+  --d-sel: #07778e;
+  --d-focus: #07778e;
+  --d-sheet-edge: rgba(8, 145, 178, 0.2);
+  --d-num: var(--mono);
+}
+/* Im HUD bleiben die Zahlen in Monospace; die brauchen weniger Grösse. */
+[data-theme^="jarvis"] .disc-score { font-size: calc(var(--disc-size) * 0.085); }
+/* Vier Summen nebeneinander passen in Monospace nicht: dort die Systemschrift. */
+[data-theme^="jarvis"] .disc-totals dd { font-family: var(--sans); font-size: 18px; }
+[data-theme^="jarvis"] .disc-item-time { font-size: 15px; }
+
+/* Mischpult: Anthrazit, Bernstein für die Auswahl, LED-Farben für die Daten. */
+[data-theme="mischpult"] #viewDisc {
+  --d-ground: #1f1e1c;
+  --d-surface: #191817;
+  --d-ink: #edebe7;
+  --d-grey: #b3afa8;
+  --d-productive: #9be564;
+  --d-neutral: #6d6862;
+  --d-wasted: #ff6b47;
+  --d-track: #2c2a27;
+  --d-line: #2f2d2a;
+  --d-lane-line: #2a2826;
+  --d-control-edge: #4a4641;
+  --d-hover: #312f2c;
+  --d-selected: rgba(242, 182, 50, 0.1);
+  --d-hit-hover: rgba(242, 182, 50, 0.06);
+  --d-sel: #f2b632;
+  --d-focus: #f2b632;
+  --d-sheet-edge: #2f2d2a;
+  --d-num: "DIN Condensed", ui-monospace, monospace;
+}
+[data-theme="mischpult"] .disc-sheet { border-radius: 4px; }
+[data-theme="mischpult"] .disc-score { font-weight: 700; }
 
 /* ------------------------------------------------------- Umschalter */
 
@@ -271,8 +367,8 @@
 }
 .viewswitch button:hover { color: var(--accent); }
 .viewswitch button[aria-pressed="true"] { color: var(--text-strong); background: var(--hover-strong); }
-[data-theme="mischpult"] .viewswitch button { font-size: 13px; font-weight: 500; padding: 5px 11px; }
-[data-theme="mischpult"] .viewswitch button[aria-pressed="true"] { font-weight: 600; }
+[data-flat] .viewswitch button { font-size: 13px; font-weight: 500; padding: 5px 11px; }
+[data-flat] .viewswitch button[aria-pressed="true"] { font-weight: 600; }
 
 /* Mit dem Umschalter wird die Kopfzeile breiter: in schmalen Fenstern bleibt
    vom Markenblock nur das Zeichen, statt dass alles umbricht. */

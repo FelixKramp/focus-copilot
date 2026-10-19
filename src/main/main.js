@@ -87,7 +87,9 @@ function createMainWindow() {
 /* ------------------------------------------------ Vorschau am Menüleisten-Icon */
 
 const PANEL_WIDTH = 312;
-const PANEL_HEIGHT = 392;
+// Reicht für das höchste Design (Tacho mit Mini-Scheibe, 402 px); der Rand
+// darunter ist durchsichtig.
+const PANEL_HEIGHT = 404;
 
 /**
  * Setzt die Vorschau mittig unter das Menüleisten-Icon. Ist das Icon so weit
