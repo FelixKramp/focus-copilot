@@ -32,7 +32,7 @@ body {
   border-radius: 12px;
   border: 1px solid rgba(45, 212, 191, 0.24);
   background:
-    radial-gradient(120% 90% at 50% 0%, rgba(34, 211, 238, 0.10), transparent 62%),
+    radial-gradient(120% 90% at 50% 0%, rgba(34, 211, 238, 0.10), transparent 62%), /* taste-skill-ignore: JARVIS-Look, bewusst */
     #06141a;
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.62);
 }
@@ -69,7 +69,7 @@ body {
   color: #eafcff;
 }
 
-.head-text h1 { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; color: #cdf3fb; }
+.head-text h1 { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #cdf3fb; }
 .head-text p {
   margin-top: 4px;
   font-size: 10.5px; color: var(--muted);
@@ -105,7 +105,7 @@ body {
 }
 .stat label {
   display: block;
-  font-size: 8.5px; letter-spacing: 0.12em; color: var(--muted-dim);
+  font-size: 8.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-dim);
   margin-bottom: 4px;
 }
 .stat strong { font-family: var(--mono); font-size: 17px; font-weight: 600; color: #eafcff; }
@@ -125,7 +125,7 @@ body {
 .bar { height: 3px; background: rgba(34, 211, 238, 0.1); border-radius: 2px; overflow: hidden; }
 .bar i {
   display: block; height: 100%; width: 0%;
-  background: linear-gradient(90deg, #22c55e, var(--green));
+  background: linear-gradient(90deg, #22c55e, var(--green)); /* taste-skill-ignore: JARVIS-Look, bewusst */
   box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
   transition: width 0.5s ease;
 }
@@ -136,7 +136,7 @@ body {
 
 .row label {
   display: block;
-  font-size: 8.5px; letter-spacing: 0.12em; color: var(--muted-dim);
+  font-size: 8.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-dim);
   margin-bottom: 5px;
 }
 .row-body { display: flex; align-items: center; gap: 7px; min-width: 0; }
@@ -149,7 +149,7 @@ body {
 .row-time { font-family: var(--mono); font-size: 11.5px; color: var(--muted); flex: none; }
 
 .pill {
-  font-size: 7.5px; font-weight: 700; letter-spacing: 0.12em;
+  font-size: 7.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
   padding: 3px 6px; border-radius: 3px;
   border: 1px solid var(--line); color: var(--muted);
   flex: none;
@@ -170,7 +170,7 @@ body {
   flex: 1;
   padding: 7px 4px;
   font-family: var(--sans);
-  font-size: 9px; font-weight: 600; letter-spacing: 0.1em;
+  font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--muted);
   background: rgba(34, 211, 238, 0.05);
   border: 1px solid var(--line);
@@ -180,3 +180,56 @@ body {
 }
 .actions button:hover { color: var(--cyan); border-color: rgba(45, 212, 191, 0.4); }
 .actions .quit:hover { color: var(--red); border-color: rgba(255, 45, 85, 0.4); background: rgba(255, 45, 85, 0.07); }
+
+/* =============================================================== Mischpult
+   Gegenstück zum Mischpult-Design im Dashboard (dashboard.css): Anthrazit,
+   Bernstein für Bedienung, LED-Grün und -Rot für Daten, kein Leuchten,
+   keine Versalien, Zahlen in DIN Condensed. */
+
+:root[data-theme="mischpult"] {
+  --cyan: #f2b632;
+  --green: #9be564;
+  --red: #ff6b47;
+  --idle: #8d877e;
+  --text: #edebe7;
+  --muted: #b3afa8;
+  --muted-dim: #9c978f;
+  --line: #2f2d2a;
+  --mono: "DIN Condensed", ui-monospace, Menlo, monospace;
+}
+[data-theme="mischpult"] .panel { background: #1f1e1c; border-color: #3a3733; }
+[data-theme="mischpult"] .notch { background: #1f1e1c; border-color: #3a3733; }
+[data-theme="mischpult"] .ring-track { stroke: #2c2a27; }
+[data-theme="mischpult"] .ring-value { filter: none; }
+[data-theme="mischpult"] .ring span { color: #f3f3f1; font-size: 17px; }
+[data-theme="mischpult"] .head-text h1 { font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text); }
+[data-theme="mischpult"] .head-text p { font-size: 12px; }
+[data-theme="mischpult"] .pulse { box-shadow: none; }
+[data-theme="mischpult"] .trend { font-size: 13px; letter-spacing: 0; }
+[data-theme="mischpult"] .stat label,
+[data-theme="mischpult"] .row label { font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--muted); }
+/* DIN Condensed mit engem Zeilenabstand, sonst passt das Fenster nicht
+   mehr in seine feste Höhe. */
+[data-theme="mischpult"] .stat strong { font-size: 20px; line-height: 1.15; }
+[data-theme="mischpult"] .stat strong:not([class]) { color: #f3f3f1; }
+[data-theme="mischpult"] .stat strong.is-productive,
+[data-theme="mischpult"] .stat strong.is-wasted { text-shadow: none; }
+[data-theme="mischpult"] .stat label { margin-bottom: 2px; }
+[data-theme="mischpult"] .rows { gap: 9px; }
+[data-theme="mischpult"] .row label { margin-bottom: 2px; }
+[data-theme="mischpult"] .meter-head { font-size: 12px; }
+[data-theme="mischpult"] .meter-head b { font-size: 14px; }
+[data-theme="mischpult"] .bar { background: #2c2a27; }
+[data-theme="mischpult"] .bar i { background: var(--green); box-shadow: none; }
+[data-theme="mischpult"] .row-name { font-size: 13px; }
+[data-theme="mischpult"] .row-time { font-size: 14px; }
+[data-theme="mischpult"] .pill { font-size: 11px; font-weight: 600; letter-spacing: 0; text-transform: none; padding: 3px 8px; border-color: transparent; }
+[data-theme="mischpult"] .pill.is-productive { color: #b5f08a; background: #22301a; }
+[data-theme="mischpult"] .pill.is-neutral { color: #d6cfc4; background: #2c2a27; }
+[data-theme="mischpult"] .pill.is-wasted { color: #ff9a80; background: #35201a; }
+[data-theme="mischpult"] .pill.is-idle { border-color: #3a3733; }
+[data-theme="mischpult"] .actions button { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; background: #262422; border-radius: 4px; }
+[data-theme="mischpult"] .actions button:hover { border-color: #4a4641; }
+[data-theme="mischpult"] .actions .quit:hover { background: #35201a; border-color: #5a2e22; }
+[data-theme="mischpult"] .stats { margin: 12px 0 10px; padding: 10px 0; gap: 8px 12px; }
+[data-theme="mischpult"] .rows { margin: 11px 0 12px; }

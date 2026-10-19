@@ -96,10 +96,10 @@ function pct(value) {
 }
 
 const CAT_LABEL = {
-  productive: 'PRODUKTIV',
-  neutral: 'NEUTRAL',
-  wasted: 'PROKRASTINATION',
-  inactive: 'NICHT AM PC',
+  productive: 'Produktiv',
+  neutral: 'Neutral',
+  wasted: 'Prokrastination',
+  inactive: 'Nicht am PC',
 };
 
 /* ---------------------------------------------------------------- Diagramme */
@@ -111,6 +111,52 @@ function renderGauge(score) {
   ring.style.strokeDasharray = String(circumference);
   ring.style.strokeDashoffset = String(circumference * (1 - Math.min(1, score / 100)));
   $('scoreValue').textContent = String(score);
+  renderLeds(score);
+}
+
+/**
+ * Score als LED-Pegel (nur im Mischpult sichtbar). 20 Zellen à 5 %, von unten
+ * nach oben; die Zonen sind fest, damit man am Pegel ablesen kann, ob der Tag
+ * im roten, gelben oder grünen Bereich läuft — wie die Aussteuerung am Pult.
+ */
+const LED_COUNT = 20;
+const LED_ZONES = [{ until: 8, cls: 'zone-low' }, { until: 14, cls: 'zone-mid' }, { until: LED_COUNT, cls: 'zone-high' }];
+
+function renderLeds(score) {
+  const host = $('ledMeter');
+  if (!host.children.length) {
+    for (let i = 0; i < LED_COUNT; i++) {
+      const led = document.createElement('i');
+      led.className = `led ${LED_ZONES.find((z) => i < z.until).cls}`;
+      led.style.setProperty('--i', String(i));
+      host.appendChild(led);
+    }
+  }
+  const lit = Math.round((Math.max(0, Math.min(100, score)) / 100) * LED_COUNT);
+  Array.from(host.children).forEach((led, i) => led.classList.toggle('is-lit', i < lit));
+}
+
+/* ------------------------------------------------------------------ Design */
+
+const THEMES = ['jarvis', 'mischpult'];
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+/** Setzt das Design. Beim ersten Snapshot sofort, danach als Überblendung. */
+function applyTheme(name) {
+  const theme = THEMES.includes(name) ? name : 'jarvis';
+  const root = document.documentElement;
+  if (root.dataset.theme === theme) return;
+  const swap = () => {
+    root.dataset.theme = theme;
+    for (const btn of $('themeMenu').querySelectorAll('[data-theme]')) {
+      btn.setAttribute('aria-checked', String(btn.dataset.theme === theme));
+    }
+  };
+  if (root.dataset.theme && document.startViewTransition && !reducedMotion.matches) {
+    document.startViewTransition(swap);
+  } else {
+    swap();
+  }
 }
 
 function renderDonut(today) {
@@ -119,7 +165,7 @@ function renderDonut(today) {
   const total = today.productive + today.neutral + today.wasted;
   const segments = [
     { value: today.productive, color: 'var(--green)' },
-    { value: today.neutral, color: 'var(--cyan)' },
+    { value: today.neutral, color: 'var(--neutral)' },
     { value: today.wasted, color: 'var(--red)' },
   ];
 
@@ -131,7 +177,7 @@ function renderDonut(today) {
       const el =
         `<circle cx="100" cy="100" r="${r}" fill="none" stroke="${s.color}" stroke-width="13" ` +
         `stroke-dasharray="${length} ${circumference - length}" stroke-dashoffset="${-offset}" ` +
-        `style="filter:drop-shadow(0 0 5px ${s.color})" />`;
+        `class="donut-arc" style="--c:${s.color}" />`;
       offset += length;
       return el;
     })
@@ -168,7 +214,7 @@ function renderWeek(days) {
     svg += `<g class="bar-group" data-i="${i}">`;
     const stack = [
       { v: d.productive, c: 'var(--green)' },
-      { v: d.neutral, c: 'var(--cyan)' },
+      { v: d.neutral, c: 'var(--neutral)' },
       { v: d.wasted, c: 'var(--red)' },
     ];
     for (const part of stack) {
@@ -179,7 +225,7 @@ function renderWeek(days) {
     }
 
     if (d.goalReached) {
-      svg += `<circle cx="${cx}" cy="${y - 7}" r="2.6" fill="var(--green)" style="filter:drop-shadow(0 0 4px var(--green))" />`;
+      svg += `<circle cx="${cx}" cy="${y - 7}" r="2.6" class="goal-dot" />`;
     }
     svg += `<text x="${cx}" y="${H - 7}" text-anchor="middle" class="axis-label">${d.label}</text>`;
     // Unsichtbare, großzügige Trefferfläche über die ganze Spalte — sonst
@@ -221,8 +267,8 @@ function renderTrend(points) {
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
   svg += `<defs><linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="rgba(34,211,238,0.22)" />
-            <stop offset="100%" stop-color="rgba(34,211,238,0)" />
+            <stop offset="0%" style="stop-color: var(--trend-fill)" />
+            <stop offset="100%" style="stop-color: var(--trend-fill); stop-opacity: 0" />
           </linearGradient></defs>`;
 
   // Waagerechte Hilfslinien bei 0 / 50 / 100.
@@ -349,7 +395,7 @@ function renderDay(hours, isToday, dayStart = 0) {
   $('day').innerHTML = `<div class="day-grid">${grid}</div><div class="day-axis">${axis}</div>`;
 }
 
-function dayTooltipHtml(i, h) {
+function dayTooltipHtml(i, h, hint) {
   const from = String(i).padStart(2, '0');
   const to = String((i + 1) % 24).padStart(2, '0');
   const head = `<div class="tt-title">${from}:00 – ${to}:00</div>`;
@@ -372,7 +418,7 @@ function dayTooltipHtml(i, h) {
     <div class="tt-row"><i class="dot dot-neutral"></i>Neutral<b>${n} Min</b></div>
     <div class="tt-row"><i class="dot dot-wasted"></i>Prokrastination<b>${w} Min</b></div>
     <div class="tt-total"><span>Nicht am Mac</span><b>${away} Min</b></div>
-    <div class="tt-hint">${i === selectedHour ? 'Klicken zum Schliessen' : 'Klicken für die Apps'}</div>
+    <div class="tt-hint">${hint || (i === selectedHour ? 'Klicken zum Schliessen' : 'Klicken für die Apps')}</div>
   `;
 }
 
@@ -399,8 +445,8 @@ function appIconRow(row, appName) {
 function renderHourDetail() {
   const box = $('dayDetail');
   if (selectedHour === null || !snapshot) {
+    // Inhalt stehen lassen, damit er beim Zuklappen sichtbar mit schrumpft.
     box.hidden = true;
-    box.innerHTML = '';
     lastDetailSignature = '';
     return;
   }
@@ -452,6 +498,7 @@ function renderHourDetail() {
         ? '<img class="rank-icon" alt="" />'
         : `<img class="rank-icon" alt="" src="https://icons.duckduckgo.com/ip3/${encodeURIComponent(item.name)}.ico" onerror="this.style.visibility='hidden'" />`,
     });
+    row.style.setProperty('--i', String(list.children.length));
     list.appendChild(row);
     if (isApp) appIconRow(row, item.name);
   }
@@ -474,12 +521,20 @@ function renderHourDetail() {
 }
 
 function selectHour(i) {
+  const opening = selectedHour !== i;
   selectedHour = selectedHour === i ? null : i;
+  // Nur beim Öffnen bzw. Wechseln der Stunde staffeln — der Live-Push alle
+  // drei Sekunden zeichnet die Liste der laufenden Stunde sonst jedes Mal neu
+  // ein und sie würde ständig nachwippen.
+  $('dayDetail').classList.toggle('is-opening', opening && selectedHour !== null);
+  clearTimeout(selectHour.timer);
+  selectHour.timer = setTimeout(() => $('dayDetail').classList.remove('is-opening'), 500);
   selectedDayKey = selectedHour === null ? null : snapshot.date.key;
   for (const cell of $('day').querySelectorAll('.day-hour')) {
     cell.classList.toggle('is-selected', Number(cell.dataset.i) === selectedHour);
   }
   renderHourDetail();
+  if (snapshot) renderDiscSelection(snapshot, opening);
 }
 
 let freshRecordType = null; // 'day' | 'week' | null — bleibt für den Rest der Sitzung markiert
@@ -518,7 +573,7 @@ async function maybeCelebrateRecord(s) {
 function playRecordBurst({ type }) {
   const host = $('recordBurst');
   const text = $('recordBurstText');
-  text.textContent = type === 'week' ? 'NEUE BESTE WOCHE' : 'NEUER REKORD';
+  text.textContent = type === 'week' ? 'Neue beste Woche' : 'Neuer Rekord';
 
   host.querySelectorAll('.burst-particle').forEach((p) => p.remove());
 
@@ -660,17 +715,369 @@ function renderTicker(s) {
   $('tickerText').textContent = parts.join('  ·  ') + '  ·  ';
 }
 
+/* ------------------------------------------------------------------ Scheibe */
+
+const DG = window.DiscGeometry;
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const DISC_DETAIL_LIMIT = 5;
+/** Für welchen Tagesbeginn Beschriftung und Stunden-Knöpfe gebaut sind. Die
+    Knöpfe bleiben bei Live-Updates stehen, sonst ginge der Tastaturfokus
+    alle drei Sekunden verloren. */
+let discBuiltFor = null;
+let lastDiscDetailSignature = '';
+/** Aufsummierter Drehwinkel des Auswahlrahmens, damit er den kurzen Weg nimmt. */
+let discSelAngle = null;
+
+/** Wie fmt(), aber ein paar Sekunden sind nicht "0 Min". */
+const fmtAtLeast = (seconds) => (seconds > 0 && seconds < 30 ? 'unter 1 Min' : fmt(seconds));
+const hourRange = (h) => `${h} bis ${(h + 1) % 24} Uhr`;
+const clockNow = () => {
+  const d = new Date();
+  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
+/** Ohne Auswahl zeigt die Scheibe heute die laufende Stunde, sonst die vollste. */
+function defaultDiscHour(s) {
+  if (s.date.isToday) return new Date().getHours();
+  let best = s.dayStart || 0;
+  let max = 0;
+  s.hours.forEach((h, i) => {
+    const active = h.p + h.n + h.w;
+    if (active > max) { max = active; best = i; }
+  });
+  return best;
+}
+
+function shownDiscHour(s) {
+  return selectedHour !== null ? selectedHour : defaultDiscHour(s);
+}
+
+/** Stunde in der Scheibe wählen. Anders als im Tagesverlauf schliesst ein
+    zweiter Klick nichts — die Scheibe zeigt immer eine Stunde. */
+function pickDiscHour(i) {
+  if (selectedHour !== i) selectHour(i);
+}
+
+function buildDiscStatic(dayStart) {
+  if (discBuiltFor === dayStart) return;
+  discBuiltFor = dayStart;
+
+  const labels = $('discLabels');
+  labels.textContent = '';
+  for (const l of DG.hourLabels(dayStart)) {
+    const t = document.createElementNS(SVG_NS, 'text');
+    t.setAttribute('x', l.x);
+    t.setAttribute('y', l.y);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('dominant-baseline', 'middle');
+    t.setAttribute('class', l.k === 0 ? 'disc-label is-start' : 'disc-label');
+    t.textContent = String(l.hour).padStart(2, '0');
+    labels.appendChild(t);
+  }
+
+  const hits = $('lanesHits');
+  hits.textContent = '';
+  for (let k = 0; k < 24; k++) {
+    const h = DG.hourAt(k, dayStart);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.hour = String(h);
+    b.setAttribute('aria-label', `${hourRange(h)} anzeigen`);
+    b.setAttribute('aria-pressed', 'false');
+    hits.appendChild(b);
+  }
+  $('discSel').setAttribute('d', DG.wedge(0, DG.R0 - 4, DG.R1 + 4));
+  discSelAngle = null;
+}
+
+function goalLine(s) {
+  const goal = s.goals.productiveMinutes * 60;
+  const done = s.today.productive;
+  if (goal > 0 && done >= goal) {
+    return s.milestones.goalAt
+      ? `Produktiv-Ziel von ${fmt(goal)} um ${s.milestones.goalAt} erreicht.`
+      : `Produktiv-Ziel von ${fmt(goal)} erreicht.`;
+  }
+  return s.date.isToday
+    ? `Produktiv-Ziel: noch ${fmt(goal - done)}.`
+    : `Produktiv-Ziel von ${fmt(goal)} nicht erreicht, es fehlten ${fmt(goal - done)}.`;
+}
+
+function budgetLine(s) {
+  const budget = s.goals.maxWasteMinutes * 60;
+  const used = s.today.wasted;
+  if (used >= budget && used > 0) {
+    const at = s.milestones.budgetAt;
+    let line = at
+      ? `Budget von ${fmt(budget)} ${s.date.isToday ? 'schon ' : ''}um ${at} aufgebraucht.`
+      : `Budget von ${fmt(budget)} aufgebraucht.`;
+    if (used - budget >= 60) line += ` ${fmt(used - budget)} darüber.`;
+    return line;
+  }
+  return s.date.isToday
+    ? `Budget: noch ${fmt(budget - used)} übrig.`
+    : `Budget von ${fmt(budget)} eingehalten, ${fmt(budget - used)} blieben übrig.`;
+}
+
+function renderDisc(s) {
+  const dayStart = s.dayStart || 0;
+  buildDiscStatic(dayStart);
+  const date = parseDayKeyLocal(s.date.key);
+  const next = new Date(date);
+  next.setDate(date.getDate() + 1);
+  const nextName = next.toLocaleDateString('de-DE', { weekday: 'long' });
+
+  // Scheibe
+  const d = DG.discPaths(s.hours, dayStart);
+  $('discTrack').setAttribute('d', d.track);
+  $('discP').setAttribute('d', d.p);
+  $('discN').setAttribute('d', d.n);
+  $('discW').setAttribute('d', d.w);
+  const needle = $('discNeedle');
+  needle.style.display = s.date.isToday ? '' : 'none';
+  if (s.date.isToday) {
+    const n = DG.needle(new Date(), dayStart);
+    const line = $('discNeedleLine');
+    line.setAttribute('x1', n.x1); line.setAttribute('y1', n.y1);
+    line.setAttribute('x2', n.x2); line.setAttribute('y2', n.y2);
+    $('discNeedleTip').setAttribute('cx', n.x2);
+    $('discNeedleTip').setAttribute('cy', n.y2);
+  }
+  $('discScore').textContent = String(s.today.score);
+  $('discScoreLabel').textContent = s.date.isToday ? 'Fokus heute' : 'Fokus an diesem Tag';
+  const span = dayStart === 0 ? 'von 0 bis 24 Uhr' : `von ${dayStart} bis ${dayStart} Uhr`;
+  $('discCaption').textContent = `Jede Speiche ist eine Stunde, ${span} im Uhrzeigersinn. `
+    + 'Je weiter sie nach außen reicht, desto länger warst du am Mac.'
+    + (s.date.isToday ? ' Der Zeiger steht auf jetzt.' : '');
+
+  // Kopf
+  $('discTitle').textContent = date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+  if (s.date.isToday) {
+    $('discSubtitle').textContent = dayStart === 0
+      ? `Läuft noch bis Mitternacht. Jetzt ist es ${clockNow()}.`
+      : `Läuft noch bis ${nextName}, ${dayStart} Uhr. Jetzt ist es ${clockNow()}.`;
+  } else {
+    $('discSubtitle').textContent = dayStart === 0
+      ? 'Von 0 bis 24 Uhr, noch mit Mitternacht als Tageswechsel.'
+      : `Von ${dayStart} Uhr bis ${nextName}, ${dayStart} Uhr.`;
+  }
+
+  const empty = s.today.total <= 0;
+  $('discEmpty').hidden = !empty;
+  $('discBody').hidden = empty;
+  if (empty) {
+    $('discEmpty').textContent = s.date.isToday
+      ? 'Noch nichts erfasst. Sobald du am Mac bist, füllt sich die Scheibe.'
+      : 'An diesem Tag wurde nichts erfasst.';
+  }
+
+  $('discGoalLine').textContent = goalLine(s);
+  $('discBudgetLine').textContent = budgetLine(s);
+  $('discTotP').textContent = fmt(s.today.productive);
+  $('discTotN').textContent = fmt(s.today.neutral);
+  $('discTotW').textContent = fmt(s.today.wasted);
+  $('discTotAll').textContent = fmt(s.today.productive + s.today.neutral + s.today.wasted);
+
+  // Spurband: Balken beginnen am Stundenanfang und sind so lang wie die
+  // Minuten — wann genau in der Stunde, weiss die App nicht.
+  const { lanes, rest } = s.appLanes || { lanes: [], rest: { names: [], total: 0 } };
+  const order = Array.from({ length: 24 }, (_, k) => DG.hourAt(k, dayStart));
+  $('lanesNames').innerHTML = lanes.map((l) => (
+    `<span title="${escapeHtml(l.name)}"><i class="disc-cat-${l.category || 'neutral'}"></i>${escapeHtml(l.name)}</span>`
+  )).join('');
+  $('lanesRows').innerHTML = lanes.map((l) => {
+    const cells = order.map((h) => {
+      const sec = l.byHour[h] || 0;
+      const w = Math.min(100, (sec / HOUR_SECONDS) * 100);
+      return `<span class="lanes-cell">${sec > 0 ? `<i class="disc-cat-${l.category || 'neutral'}" style="width:${Math.max(4, w).toFixed(1)}%"></i>` : ''}</span>`;
+    }).join('');
+    return `<div class="lanes-row">${cells}</div>`;
+  }).join('') || '<div class="lanes-row"></div>';
+  $('lanesNone').hidden = lanes.length > 0;
+  const n = rest.names.length;
+  $('lanesMore').textContent = n === 0 ? ''
+    : n <= 2 ? `Dazu ${rest.names.join(' und ')} mit zusammen ${fmtAtLeast(rest.total)}.`
+      : `Dazu ${rest.names.slice(0, 2).join(', ')} und ${n - 2} weitere mit zusammen ${fmtAtLeast(rest.total)}.`;
+
+  renderDiscSelection(s, false);
+}
+
+/** Alles, was an der gewählten Stunde hängt: Rahmen, Lineal, Knöpfe, Liste. */
+function renderDiscSelection(s, opening) {
+  const dayStart = s.dayStart || 0;
+  if (discBuiltFor !== dayStart) return;
+  const h = shownDiscHour(s);
+  const k = DG.posOf(h, dayStart);
+
+  // Rahmen um die Speiche: den kürzeren Weg herum drehen.
+  const target = k * 15;
+  const sel = $('discSel');
+  if (discSelAngle === null) {
+    // Erste Stellung ohne Drehung von 0 Grad aus.
+    discSelAngle = target;
+    sel.style.transition = 'none';
+    sel.style.transform = `rotate(${discSelAngle}deg)`;
+    sel.getBoundingClientRect();
+    sel.style.transition = '';
+  } else {
+    discSelAngle += ((((target - discSelAngle) % 360) + 540) % 360) - 180;
+    sel.style.transform = `rotate(${discSelAngle}deg)`;
+  }
+
+  $('lanesRuler').innerHTML = Array.from({ length: 24 }, (_, i) => {
+    const hour = DG.hourAt(i, dayStart);
+    const sel = i === k;
+    // Direkt neben der gewählten Stunde keine zweite Zahl, sonst stoßen sie aneinander.
+    const show = sel || (i % 3 === 0 && Math.abs(i - k) > 1);
+    return `<span${sel ? ' class="is-selected"' : ''}>${show ? String(hour).padStart(2, '0') : ''}</span>`;
+  }).join('');
+  for (const b of $('lanesHits').children) {
+    b.setAttribute('aria-pressed', String(Number(b.dataset.hour) === h));
+  }
+  $('discPrev').disabled = k === 0;
+  $('discNext').disabled = k === 23;
+
+  const hour = s.hours[h] || {};
+  const items = (s.hourItems || [])[h];
+  const active = (hour.p || 0) + (hour.n || 0) + (hour.w || 0);
+  $('discHourLabel').textContent = hourRange(h);
+  $('discHourTotal').textContent = active > 0 ? `${fmt(active)} am Mac` : '';
+
+  const signature = JSON.stringify([s.date.key, h, active, items]);
+  if (signature === lastDiscDetailSignature) return;
+  lastDiscDetailSignature = signature;
+
+  const list = $('discHourList');
+  list.classList.toggle('is-opening', !!opening);
+  clearTimeout(renderDiscSelection.timer);
+  renderDiscSelection.timer = setTimeout(() => list.classList.remove('is-opening'), 500);
+
+  if (!items || !items.length) {
+    const legacy = !items && active > 0;
+    list.innerHTML = legacy
+      ? '<p class="disc-hour-note">Für diese Stunde gibt es keine Aufschlüsselung. Die App merkt sich erst seit dem Update, was in welcher Stunde lief.</p>'
+      : '<p class="disc-hour-note">Nicht am Mac.</p>';
+    return;
+  }
+
+  const shown = items.slice(0, DISC_DETAIL_LIMIT);
+  const max = shown[0].seconds;
+  let html = shown.map((item, i) => `
+    <div class="disc-item" style="--i:${i}" data-key="${escapeHtml(`${item.kind}:${item.name.toLowerCase()}`)}" data-name="${escapeHtml(item.name)}" title="Klicken zum Umstufen">
+      <span class="disc-item-name">${escapeHtml(item.name)}</span>
+      <span class="disc-item-bar"><i class="disc-cat-${item.category || 'neutral'}" style="width:${Math.max(3, (item.seconds / max) * 100).toFixed(0)}%"></i></span>
+      <span class="disc-item-time">${fmtAtLeast(item.seconds)}</span>
+    </div>`).join('');
+
+  const restItems = items.slice(DISC_DETAIL_LIMIT);
+  const listed = items.reduce((sum, e) => sum + e.seconds, 0);
+  const notes = [];
+  if (restItems.length) {
+    notes.push(`Dazu ${restItems.length} weitere mit zusammen ${fmtAtLeast(restItems.reduce((sum, e) => sum + e.seconds, 0))}.`);
+  }
+  if (active - listed >= 60) notes.push(`${fmt(active - listed)} ohne Zuordnung.`);
+  if (notes.length) html += `<p class="disc-hour-note is-small">${notes.join(' ')}</p>`;
+  list.innerHTML = html;
+}
+
+function stepDiscHour(delta) {
+  if (!snapshot) return;
+  const dayStart = snapshot.dayStart || 0;
+  const k = DG.posOf(shownDiscHour(snapshot), dayStart) + delta;
+  if (k < 0 || k > 23) return;
+  pickDiscHour(DG.hourAt(k, dayStart));
+}
+
+function attachDisc() {
+  $('lanesHits').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-hour]');
+    if (b) pickDiscHour(Number(b.dataset.hour));
+  });
+  $('discPrev').addEventListener('click', () => stepDiscHour(-1));
+  $('discNext').addEventListener('click', () => stepDiscHour(1));
+
+  // In der Scheibe selbst: Winkel und Abstand zur Mitte ergeben die Stunde.
+  const svg = $('discSvg');
+  const hourAtEvent = (e) => {
+    const pt = clientToSvgPoint(svg, e.clientX, e.clientY);
+    return pt && snapshot ? DG.hourAtPoint(pt.x, pt.y, snapshot.dayStart || 0) : null;
+  };
+  svg.addEventListener('mousemove', (e) => {
+    const h = hourAtEvent(e);
+    if (h === null) { hideTooltip(); svg.style.cursor = 'default'; return; }
+    svg.style.cursor = 'pointer';
+    showTooltip(e.clientX, e.clientY, dayTooltipHtml(h, snapshot.hours[h] || {}, 'Klicken für die Apps'));
+  });
+  svg.addEventListener('mouseleave', hideTooltip);
+  svg.addEventListener('click', (e) => {
+    const h = hourAtEvent(e);
+    if (h !== null) pickDiscHour(h);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (currentView !== 'disc' || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const t = e.target instanceof Element ? e.target : null;
+    if ((t && t.closest('input, textarea, select')) || !$('goalsOverlay').hidden) return;
+    e.preventDefault();
+    stepDiscHour(e.key === 'ArrowLeft' ? -1 : 1);
+  });
+}
+
+attachDisc();
+
+/* ------------------------------------------------------------------ Ansicht */
+
+let currentView = null;
+/** Gewählte Ansicht, solange das Speichern noch läuft — ein Live-Update mit
+    der alten Einstellung soll nicht kurz zurückschalten. */
+let pendingView = null;
+
+function applyView(view) {
+  const v = view === 'disc' ? 'disc' : 'overview';
+  if (currentView === v) return;
+  const swap = () => {
+    currentView = v;
+    $('viewOverview').hidden = v !== 'overview';
+    $('viewDisc').hidden = v !== 'disc';
+    for (const b of document.querySelectorAll('.viewswitch [data-view]')) {
+      b.setAttribute('aria-pressed', String(b.dataset.view === v));
+    }
+    hideTooltip();
+    window.scrollTo(0, 0);
+  };
+  if (currentView && document.startViewTransition && !reducedMotion.matches) {
+    document.startViewTransition(swap);
+  } else {
+    swap();
+  }
+}
+
+document.querySelector('.viewswitch').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-view]');
+  if (!b) return;
+  pendingView = b.dataset.view;
+  applyView(pendingView);
+  try {
+    render(await window.copilot.setSettings({ view: pendingView }));
+  } finally {
+    pendingView = null;
+  }
+});
+
 /* ------------------------------------------------------------ Gesamtrender */
 
 function render(s) {
   snapshot = s;
+  applyTheme(s.settings && s.settings.theme);
+  applyView(pendingView || (s.settings && s.settings.view));
   viewedDate = parseDayKeyLocal(s.date.key);
   updateDateNavButtons();
 
   $('dateLabel').textContent = s.date.label;
-  $('statusText').textContent = s.tracking ? 'SYSTEM ONLINE · LIVE' : 'AUFZEICHNUNG PAUSIERT';
+  $('statusText').textContent = s.tracking ? 'System online · live' : 'Aufzeichnung pausiert';
   $('statusDot').classList.toggle('is-paused', !s.tracking);
-  $('btnTracking').textContent = s.tracking ? 'PAUSE' : 'START';
+  $('btnTracking').textContent = s.tracking ? 'Pause' : 'Start';
 
   renderGauge(s.today.score);
   $('legProductive').textContent = fmt(s.today.productive);
@@ -708,6 +1115,7 @@ function render(s) {
   }
   renderDay(s.hours, s.date.isToday, s.dayStart || 0);
   renderHourDetail();
+  renderDisc(s);
 
   $('currentStrip').hidden = !s.date.isToday;
 
@@ -723,7 +1131,7 @@ function render(s) {
   $('currentName').textContent = label;
   const pill = $('currentPill');
   const cat = cur.idle ? 'inactive' : (cur.category || 'neutral');
-  pill.textContent = CAT_LABEL[cat] || 'NEUTRAL';
+  pill.textContent = CAT_LABEL[cat] || 'Neutral';
   pill.className = 'pill is-' + (cat === 'inactive' ? 'idle' : cat);
 
   const icon = $('currentIcon');
@@ -911,8 +1319,39 @@ function closeCtx() {
   ctxKey = null;
 }
 
+const themeMenu = $('themeMenu');
+
+function closeThemeMenu() {
+  if (themeMenu.hidden) return;
+  themeMenu.hidden = true;
+  $('btnTheme').setAttribute('aria-expanded', 'false');
+}
+
+$('btnTheme').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!themeMenu.hidden) { closeThemeMenu(); return; }
+  closeCtx();
+  // Unter dem Knopf, rechtsbündig, innerhalb des Fensters.
+  const r = e.currentTarget.getBoundingClientRect();
+  themeMenu.hidden = false;
+  const w = themeMenu.getBoundingClientRect().width;
+  themeMenu.style.left = `${Math.max(8, Math.min(r.right - w, window.innerWidth - w - 12))}px`;
+  themeMenu.style.top = `${r.bottom + 6}px`;
+  e.currentTarget.setAttribute('aria-expanded', 'true');
+  const current = themeMenu.querySelector('[aria-checked="true"]');
+  if (current) current.focus();
+});
+
+themeMenu.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-theme]');
+  if (!btn) return;
+  e.stopPropagation();
+  closeThemeMenu();
+  render(await window.copilot.setSettings({ theme: btn.dataset.theme }));
+});
+
 document.addEventListener('click', (e) => {
-  const row = e.target.closest('.rank');
+  const row = e.target.closest('.rank, .disc-item');
   if (row && row.dataset.key) {
     e.stopPropagation();
     openCtx(e, row.dataset.key, row.dataset.name);
@@ -922,7 +1361,7 @@ document.addEventListener('click', (e) => {
     window.copilot.openLink(row.dataset.url);
     return;
   }
-  if (!e.target.closest('.ctx')) closeCtx();
+  if (!e.target.closest('.ctx')) { closeCtx(); closeThemeMenu(); }
 });
 
 ctxMenu.addEventListener('click', async (e) => {
@@ -992,7 +1431,7 @@ $('goalsOverlay').addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { $('goalsOverlay').hidden = true; closeCtx(); }
+  if (e.key === 'Escape') { $('goalsOverlay').hidden = true; closeCtx(); closeThemeMenu(); }
 });
 
 /* ----------------------------------------------------------------- Buttons */

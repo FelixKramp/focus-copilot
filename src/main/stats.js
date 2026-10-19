@@ -69,6 +69,54 @@ function hourItems(hours) {
   });
 }
 
+/** Wie viele Apps das Spurband der Scheibe einzeln zeigt; der Rest wird zusammengefasst. */
+const LANE_COUNT = 6;
+
+/**
+ * Die meistgenutzten Apps und Websites des Tages mit ihren Minuten je Stunde,
+ * für das Spurband der Scheibe. Die Kategorie einer App ist die ihres größten
+ * Stunden-Eintrags. Alte Stunden ohne Einträge tragen nichts bei.
+ */
+function appLanes(hours) {
+  const byKey = new Map();
+  hours.forEach((h, hour) => {
+    for (const [itemKey, rec] of Object.entries(h.items || {})) {
+      if (!(rec.sec > 0)) continue;
+      let lane = byKey.get(itemKey);
+      if (!lane) {
+        const sep = itemKey.indexOf(':');
+        lane = {
+          kind: itemKey.slice(0, sep),
+          name: itemKey.slice(sep + 1),
+          category: rec.cat,
+          total: 0,
+          byHour: new Array(24).fill(0),
+          biggest: 0,
+        };
+        byKey.set(itemKey, lane);
+      }
+      lane.total += rec.sec;
+      lane.byHour[hour] += rec.sec;
+      if (rec.sec > lane.biggest) { lane.biggest = rec.sec; lane.category = rec.cat; }
+    }
+  });
+  const ranked = [...byKey.values()]
+    .sort((a, b) => b.total - a.total)
+    .map(({ biggest, ...lane }) => lane);
+  const rest = ranked.slice(LANE_COUNT);
+  return {
+    lanes: ranked.slice(0, LANE_COUNT),
+    rest: { names: rest.map((l) => l.name), total: rest.reduce((sum, l) => sum + l.total, 0) },
+  };
+}
+
+/** Zeitstempel → "15:44" in lokaler Zeit, oder null. */
+function clockTime(ms) {
+  if (!ms) return null;
+  const d = new Date(ms);
+  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 /**
  * Serie: wie viele Tage in Folge (bis gestern, plus heute falls schon
  * erreicht) wurde das Produktiv-Ziel geschafft?
@@ -177,6 +225,13 @@ function buildSnapshot(store, tracker, dateKey) {
     hourItems: hourItems(viewed.hours),
     // Erste Stunde des Tagesverlaufs; ältere Tage liefen noch ab Mitternacht.
     dayStart: viewed.dayStart || 0,
+    appLanes: appLanes(viewed.hours),
+    // Uhrzeit, zu der Ziel bzw. Budget erreicht wurde; null, wenn noch nicht
+    // oder wenn der Zeitpunkt nicht bekannt ist (dann zeigt goals, dass ja).
+    milestones: {
+      goalAt: clockTime((viewed.milestones || {}).goalAt),
+      budgetAt: clockTime((viewed.milestones || {}).budgetAt),
+    },
     last7,
     last14,
     weekScore: {
@@ -192,4 +247,4 @@ function buildSnapshot(store, tracker, dateKey) {
   };
 }
 
-module.exports = { buildSnapshot, focusScore, scoreTrend, project };
+module.exports = { buildSnapshot, focusScore, scoreTrend, project, appLanes };

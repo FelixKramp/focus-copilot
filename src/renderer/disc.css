@@ -1,0 +1,295 @@
+/* Focus Co-Pilot — Ansicht "Scheibe".
+   Der Tag als Scheibe eines Fahrtenschreibers: ein helles Blatt, das in beiden
+   Designs gleich bleibt, wie ein Stück Papier auf dem Pult. Eigene Farben,
+   eigene Schrift; die Bewegungs-Tokens kommen aus dashboard.css. */
+
+#viewDisc {
+  --d-ground: #e9ece9;
+  --d-surface: #f7f8f6;
+  --d-ink: #16202a;
+  --d-grey: #55606b;
+  --d-productive: #1f4fd1;
+  --d-neutral: #a3abb3;
+  --d-wasted: #e0661c;
+  --d-track: #dfe3df;
+  --d-line: #d3d8d3;
+  --d-lane-line: #dde1dd;
+  --d-control-edge: #c3cac3;
+  --d-hover: #e1e5e1;
+  --d-selected: rgba(22, 32, 42, 0.07);
+
+  /* Text in der Systemschrift wie im Rest der App; die Zahlen bekommen die
+     schmale Avenir Next, die auf jedem Mac liegt. Mehr Schriften braucht es nicht. */
+  --d-sans: var(--sans);
+  --d-num: "Avenir Next Condensed", "Avenir Next", system-ui, sans-serif;
+
+  /* Die Scheibe ist so groß, wie Breite und Höhe des Fensters erlauben. */
+  --disc-size: clamp(380px, min(48vw, calc(100vh - 220px)), 640px);
+}
+
+.disc-view {
+  position: relative;
+  z-index: 1;
+  padding: 16px 22px 22px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.disc-view[hidden] { display: none; }
+/* .grid setzt display: grid und würde hidden sonst überstimmen. */
+#viewOverview[hidden] { display: none; }
+
+.disc-sheet {
+  display: grid;
+  grid-template-columns: var(--disc-size) minmax(0, 1fr);
+  gap: 44px;
+  padding: 28px 40px 32px;
+  border-radius: 10px;
+  background: var(--d-ground);
+  color: var(--d-ink);
+  font-family: var(--d-sans);
+  font-size: 15px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- Scheibe */
+
+.disc-left { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+.disc-face {
+  position: relative;
+  width: var(--disc-size);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--d-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.disc-svg { width: 93.75%; height: auto; overflow: visible; cursor: pointer; }
+.disc-track { fill: var(--d-track); }
+.disc-p { fill: var(--d-productive); }
+.disc-n { fill: var(--d-neutral); }
+.disc-w { fill: var(--d-wasted); }
+
+/* Der Rahmen um die gewählte Stunde ist immer Speiche 0 und wird gedreht —
+   so wandert er beim Weiterschalten um die Mitte, statt zu springen. */
+.disc-sel {
+  fill: none;
+  stroke: var(--d-ink);
+  stroke-width: 2.5;
+  transform-box: view-box;
+  transform-origin: 300px 300px;
+  transition: transform var(--t-standard) var(--ease-out);
+}
+.disc-sel.is-hidden { display: none; }
+
+.disc-needle { stroke: var(--d-ink); stroke-width: 2; stroke-linecap: round; }
+.disc-needle-tip { fill: var(--d-ink); }
+
+.disc-label { font-family: var(--d-sans); font-size: 14px; fill: var(--d-grey); }
+.disc-label.is-start { font-size: 15px; font-weight: 600; fill: var(--d-ink); }
+
+.disc-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.disc-score {
+  font-family: var(--d-num);
+  font-size: calc(var(--disc-size) * 0.1);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.disc-score-label { margin-top: 6px; font-size: 14px; color: var(--d-grey); }
+
+.disc-caption { max-width: 560px; font-size: 13px; color: var(--d-grey); text-align: center; text-wrap: pretty; }
+
+/* -------------------------------------------------------------- Rechts */
+
+.disc-right { display: flex; flex-direction: column; gap: 20px; padding-top: 6px; min-width: 0; }
+
+.disc-title { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
+.disc-subtitle { margin-top: 6px; color: var(--d-grey); }
+.disc-empty { color: var(--d-grey); }
+.disc-empty[hidden], .disc-body[hidden] { display: none; }
+
+.disc-body { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+.disc-milestones { display: flex; flex-direction: column; gap: 6px; }
+.disc-milestones p { display: flex; gap: 10px; align-items: baseline; }
+.disc-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; transform: translateY(-1px); }
+.disc-dot--p { background: var(--d-productive); }
+.disc-dot--w { background: var(--d-wasted); }
+
+.disc-totals {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--d-line);
+  border-bottom: 1px solid var(--d-line);
+}
+.disc-totals > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.disc-totals dt { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--d-grey); white-space: nowrap; }
+.disc-totals dd { font-family: var(--d-num); font-size: 22px; font-weight: 600; white-space: nowrap; }
+.disc-swatch { width: 12px; height: 5px; border-radius: 1px; flex: none; }
+.disc-swatch--p { background: var(--d-productive); }
+.disc-swatch--n { background: var(--d-neutral); }
+.disc-swatch--w { background: var(--d-wasted); }
+.disc-swatch--all { background: var(--d-ink); }
+
+/* ------------------------------------------------------------- Spurband */
+
+.lanes-block { display: flex; flex-direction: column; gap: 6px; }
+.lanes-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.lanes-head h3, .disc-hour-head h3 { font-size: 16px; font-weight: 600; }
+.lanes-head span { font-size: 13px; color: var(--d-grey); }
+
+.lanes { display: grid; grid-template-columns: 128px minmax(0, 1fr); column-gap: 10px; }
+
+.lanes-ruler { display: flex; height: 18px; }
+.lanes-ruler span { flex: 1; min-width: 0; font-size: 12px; color: var(--d-grey); white-space: nowrap; }
+.lanes-ruler span.is-selected { font-weight: 700; color: var(--d-ink); }
+
+.lanes-names { display: flex; flex-direction: column; }
+.lanes-names span {
+  height: 26px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lanes-names i { width: 3px; height: 14px; border-radius: 1px; flex: none; }
+
+.lanes-field { position: relative; display: flex; flex-direction: column; }
+.lanes-row { height: 26px; display: flex; align-items: center; border-bottom: 1px solid var(--d-lane-line); }
+.lanes-cell { flex: 1; min-width: 0; height: 12px; padding-right: 1px; display: flex; }
+.lanes-cell i { height: 100%; border-radius: 2px; }
+.lanes-none { font-size: 13px; color: var(--d-grey); text-wrap: pretty; }
+.lanes-none[hidden] { display: none; }
+
+.lanes-hits { position: absolute; inset: 0; display: flex; }
+.lanes-hits button {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color var(--t-quick) var(--ease-out), box-shadow var(--t-quick) var(--ease-out);
+}
+.lanes-hits button:hover { background: rgba(22, 32, 42, 0.05); }
+.lanes-hits button[aria-pressed="true"] { background: var(--d-selected); box-shadow: inset 0 0 0 1.5px var(--d-ink); }
+
+.lanes-more { margin-left: 138px; font-size: 13px; color: var(--d-grey); min-height: 18px; }
+
+/* --------------------------------------------------- Gewählte Stunde */
+
+.disc-hour { display: flex; flex-direction: column; gap: 4px; }
+.disc-hour-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.disc-hour-total { font-weight: 400; color: var(--d-grey); }
+
+.disc-step {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  border: 1px solid var(--d-control-edge);
+  background: var(--d-surface);
+  color: var(--d-ink);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--t-quick) var(--ease-out), transform var(--t-quick) var(--ease-out);
+}
+#discNext { margin-left: auto; }
+.disc-step:hover:not(:disabled) { background: var(--d-hover); }
+.disc-step:active:not(:disabled) { transform: scale(0.94); }
+.disc-step:disabled { opacity: 0.35; cursor: default; }
+
+.disc-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px 64px;
+  align-items: center;
+  gap: 14px;
+  height: 30px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.disc-item:hover .disc-item-name { text-decoration: underline; text-decoration-color: var(--d-control-edge); text-underline-offset: 3px; }
+.disc-item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.disc-item-bar { height: 6px; border-radius: 3px; background: var(--d-track); overflow: hidden; }
+.disc-item-bar i { display: block; height: 100%; }
+.disc-item-time { text-align: right; font-family: var(--d-num); font-size: 17px; font-weight: 600; }
+.disc-hour-note { height: 30px; display: flex; align-items: center; color: var(--d-grey); }
+.disc-hour-note.is-small { font-size: 13px; height: auto; padding-top: 4px; }
+
+.disc-hour-list.is-opening .disc-item { animation: rowIn var(--t-standard) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 25ms); }
+
+.disc-cat-productive { background: var(--d-productive); }
+.disc-cat-neutral { background: var(--d-neutral); }
+.disc-cat-wasted { background: var(--d-wasted); }
+
+#viewDisc :focus-visible { outline: 2px solid var(--d-productive); outline-offset: 1px; }
+
+/* ------------------------------------------------------- Umschalter */
+
+.viewswitch {
+  display: flex;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--control-bg);
+  -webkit-app-region: no-drag;
+}
+.viewswitch button {
+  padding: 5px 12px;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: calc(0.14em * var(--tracking));
+  text-transform: var(--label-case);
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  cursor: pointer;
+  transition: color var(--t-quick) var(--ease-out), background-color var(--t-quick) var(--ease-out);
+}
+.viewswitch button:hover { color: var(--accent); }
+.viewswitch button[aria-pressed="true"] { color: var(--text-strong); background: var(--hover-strong); }
+[data-theme="mischpult"] .viewswitch button { font-size: 13px; font-weight: 500; padding: 5px 11px; }
+[data-theme="mischpult"] .viewswitch button[aria-pressed="true"] { font-weight: 600; }
+
+/* Mit dem Umschalter wird die Kopfzeile breiter: in schmalen Fenstern bleibt
+   vom Markenblock nur das Zeichen, statt dass alles umbricht. */
+.datepill, .btn, .viewswitch button { white-space: nowrap; }
+@media (max-width: 1240px) {
+  /* Nur optisch: die Überschrift bleibt für Screenreader da. */
+  .brand-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+/* Schmale Fenster: Spalten untereinander. */
+@media (max-width: 1100px) {
+  .disc-sheet { grid-template-columns: minmax(0, 1fr); padding: 24px; }
+  #viewDisc { --disc-size: clamp(340px, min(80vw, calc(100vh - 240px)), 560px); }
+}
+
+/* Noch schmaler, als das Fenster sein darf (z. B. in der Vorschau): Knöpfe
+   brechen um, statt die Seite seitwärts scrollen zu lassen. */
+@media (max-width: 960px) {
+  .topbar-actions { flex-wrap: wrap; justify-content: flex-end; }
+}

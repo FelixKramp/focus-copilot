@@ -6,35 +6,44 @@
         content="default-src 'self'; img-src 'self' data: https://i.ytimg.com https://icons.duckduckgo.com; style-src 'self' 'unsafe-inline'; script-src 'self';" />
   <title>Focus Co-Pilot</title>
   <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="disc.css" />
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
 
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-mark" aria-hidden="true">
+        <!-- Mischpult-Marke: drei Kanalpegel. JARVIS blendet sie aus. -->
+        <svg class="brand-mark-mixer" viewBox="0 0 18 18"><rect x="2" y="7" width="3" height="9" rx="0.5" /><rect x="7.5" y="2" width="3" height="14" rx="0.5" /><rect x="13" y="10" width="3" height="6" rx="0.5" /></svg>
+      </span>
       <div class="brand-text">
-        <h1>FOKUS CO-PILOT</h1>
-        <p><span class="pulse" id="statusDot"></span><span id="statusText">SYSTEM ONLINE · LIVE</span></p>
+        <h1>Fokus Co-Pilot</h1>
+        <p><span class="pulse" id="statusDot"></span><span id="statusText">System online · live</span></p>
       </div>
     </div>
 
     <div class="topbar-actions">
+      <div class="viewswitch" role="group" aria-label="Ansicht">
+        <button type="button" data-view="overview" aria-pressed="true">Übersicht</button>
+        <button type="button" data-view="disc" aria-pressed="false">Scheibe</button>
+      </div>
       <div class="datepill">
         <button class="chev" id="btnPrevDay" aria-label="Vorheriger Tag">‹</button>
         <span id="dateLabel">—</span>
         <button class="chev" id="btnNextDay" aria-label="Nächster Tag">›</button>
       </div>
-      <button class="btn" id="btnToday">HEUTE</button>
-      <button class="btn" id="btnTracking" title="Tracking pausieren oder fortsetzen">PAUSE</button>
-      <button class="btn btn-accent" id="btnGoals">ZIELE</button>
+      <button class="btn" id="btnToday">Heute</button>
+      <button class="btn" id="btnTracking" title="Tracking pausieren oder fortsetzen">Pause</button>
+      <button class="btn" id="btnTheme" aria-haspopup="menu" aria-expanded="false" aria-controls="themeMenu">Design</button>
+      <button class="btn btn-accent" id="btnGoals">Ziele</button>
     </div>
   </header>
 
-  <main class="grid">
+  <main class="grid" id="viewOverview">
     <!-- Reihe 1 -->
     <section class="card span-4" id="cardReactor">
-      <div class="card-head"><h2>FOKUS-REAKTOR</h2><span class="card-sub">live</span></div>
+      <div class="card-head"><h2>Fokus-Reaktor</h2><span class="card-sub">live</span></div>
       <div class="reactor">
         <div class="record-burst" id="recordBurst" hidden>
           <span class="record-burst-text" id="recordBurstText"></span>
@@ -51,6 +60,8 @@
             <circle cx="100" cy="100" r="82" class="gauge-value" id="gaugeValue" filter="url(#ringGlow)" />
             <circle cx="100" cy="100" r="66" class="gauge-inner" />
           </svg>
+          <!-- Mischpult zeigt den Score als LED-Pegel statt als Ring. -->
+          <div class="led-meter" id="ledMeter" aria-hidden="true"></div>
           <div class="gauge-label">
             <strong id="scoreValue">0</strong><span>%</span>
           </div>
@@ -64,12 +75,12 @@
     </section>
 
     <section class="card span-8" id="cardToday">
-      <div class="card-head"><h2>HEUTE</h2><span class="card-sub" id="todayHint">1 Std 0 Min / 3 Std 0 Min</span></div>
+      <div class="card-head"><h2>Heute</h2><span class="card-sub" id="todayHint">1 Std 0 Min / 3 Std 0 Min</span></div>
       <div class="stat-row">
-        <div class="stat"><label>GESAMT AM MAC</label><strong id="statTotal">0 Min</strong></div>
-        <div class="stat"><label>PRODUKTIV</label><strong class="is-productive" id="statProductive">0 Min</strong></div>
-        <div class="stat"><label>PROKRASTINATION</label><strong class="is-wasted" id="statWasted">0 Min</strong></div>
-        <div class="stat"><label>NICHT AM PC</label><strong class="is-idle" id="statIdle">0 Min</strong></div>
+        <div class="stat"><label>Gesamt am Mac</label><strong id="statTotal">0 Min</strong></div>
+        <div class="stat"><label>Produktiv</label><strong class="is-productive" id="statProductive">0 Min</strong></div>
+        <div class="stat"><label>Prokrastination</label><strong class="is-wasted" id="statWasted">0 Min</strong></div>
+        <div class="stat"><label>Nicht am PC</label><strong class="is-idle" id="statIdle">0 Min</strong></div>
       </div>
       <div class="meters">
         <div class="meter">
@@ -86,7 +97,7 @@
 
     <!-- Reihe 2 -->
     <section class="card span-4">
-      <div class="card-head"><h2>VERTEILUNG</h2><span class="card-sub">heute</span></div>
+      <div class="card-head"><h2>Verteilung</h2><span class="card-sub">heute</span></div>
       <div class="reactor reactor--compact">
         <div class="gauge gauge--sm">
           <svg viewBox="0 0 200 200" class="gauge-svg" id="donutSvg" aria-hidden="true">
@@ -104,12 +115,12 @@
     </section>
 
     <section class="card span-4">
-      <div class="card-head"><h2>LETZTE 7 TAGE</h2><span class="card-sub">Punkt = Ziel erreicht</span></div>
+      <div class="card-head"><h2>Letzte 7 Tage</h2><span class="card-sub">Punkt = Ziel erreicht</span></div>
       <div class="chart chart--bars" id="week"></div>
     </section>
 
     <section class="card span-4">
-      <div class="card-head"><h2>FOKUS-TREND</h2><span class="card-sub">letzte 14 Tage</span></div>
+      <div class="card-head"><h2>Fokus-Trend</h2><span class="card-sub">letzte 14 Tage</span></div>
       <div class="chart chart--trend" id="trend"></div>
     </section>
 
@@ -120,21 +131,21 @@
         <img class="strip-icon" id="currentIcon" alt="" hidden />
         <span id="currentName">Warte auf Aktivität …</span>
       </div>
-      <span class="pill" id="currentPill">NEUTRAL</span>
+      <span class="pill" id="currentPill">Neutral</span>
     </section>
 
     <!-- Hochrechnung -->
     <section class="card span-12">
       <div class="card-head">
-        <h2>HOCHRECHNUNG</h2>
+        <h2>Hochrechnung</h2>
         <span class="card-sub">Prokrastination, linear auf dein Tempo gerechnet</span>
       </div>
       <div class="projection" id="projection">
-        <div class="proj"><label>PRO TAG</label><strong id="projDay">0 Min</strong></div>
-        <div class="proj"><label>PRO WOCHE</label><strong id="projWeek">0 Min</strong></div>
-        <div class="proj"><label>PRO MONAT</label><strong id="projMonth">0 Std</strong></div>
-        <div class="proj"><label>PRO JAHR</label><strong id="projYear">0 Std</strong></div>
-        <div class="proj proj--loud"><label>PRO JAHRZEHNT</label><strong id="projDecade">0 Tage</strong></div>
+        <div class="proj"><label>Pro Tag</label><strong id="projDay">0 Min</strong></div>
+        <div class="proj"><label>Pro Woche</label><strong id="projWeek">0 Min</strong></div>
+        <div class="proj"><label>Pro Monat</label><strong id="projMonth">0 Std</strong></div>
+        <div class="proj"><label>Pro Jahr</label><strong id="projYear">0 Std</strong></div>
+        <div class="proj proj--loud"><label>Pro Jahrzehnt</label><strong id="projDecade">0 Tage</strong></div>
       </div>
       <p class="card-note" id="projNote">Noch keine Prokrastination erfasst. Weiter so.</p>
     </section>
@@ -142,12 +153,12 @@
     <!-- Tagesverlauf -->
     <section class="card span-6" id="cardDay">
       <div class="card-head">
-        <h2>TAGESVERLAUF</h2>
+        <h2>Tagesverlauf</h2>
         <div class="chart-legend">
-          <span><i class="dot dot-productive"></i>PRODUKTIV</span>
-          <span><i class="dot dot-neutral"></i>NEUTRAL</span>
-          <span><i class="dot dot-wasted"></i>PROKRASTINATION</span>
-          <span><i class="dot dot-track"></i>NICHT AM MAC</span>
+          <span><i class="dot dot-productive"></i>Produktiv</span>
+          <span><i class="dot dot-neutral"></i>Neutral</span>
+          <span><i class="dot dot-wasted"></i>Prokrastination</span>
+          <span><i class="dot dot-track"></i>Nicht am Mac</span>
         </div>
       </div>
       <div class="chart chart--day" id="day"></div>
@@ -155,20 +166,20 @@
     </section>
 
     <section class="card span-6" id="cardWeekScore">
-      <div class="card-head"><h2>WOCHEN-SCORE</h2><span class="card-sub">letzte 7 Tage</span></div>
+      <div class="card-head"><h2>Wochen-Score</h2><span class="card-sub">letzte 7 Tage</span></div>
       <div class="week-score-avg">
         <strong id="weekScoreAvg">0</strong><span>%</span>
-        <label>Ø DIESE WOCHE</label>
+        <label>Ø diese Woche</label>
       </div>
       <div class="chart chart--trend chart--week-score" id="weekScoreChart"></div>
       <div class="records">
         <div class="record-badge" id="badgeBestDay">
-          <label>BESTER TAG</label>
+          <label>Bester Tag</label>
           <strong id="bestDayScore">—</strong>
           <span id="bestDayDate"></span>
         </div>
         <div class="record-badge" id="badgeBestWeek">
-          <label>BESTE WOCHE</label>
+          <label>Beste Woche</label>
           <strong id="bestWeekScore">—</strong>
         </div>
       </div>
@@ -176,38 +187,116 @@
 
     <!-- Ranglisten -->
     <section class="card span-4">
-      <div class="card-head"><h2>APPS</h2><span class="card-sub">heute pro Anwendung</span></div>
+      <div class="card-head"><h2>Apps</h2><span class="card-sub">heute pro Anwendung</span></div>
       <ul class="ranklist" id="listApps"></ul>
     </section>
 
     <section class="card span-4">
-      <div class="card-head"><h2>YOUTUBE</h2><span class="card-sub" id="ytSub">heute geschaut</span></div>
+      <div class="card-head"><h2>YouTube</h2><span class="card-sub" id="ytSub">heute geschaut</span></div>
       <ul class="ranklist ranklist--video" id="listYoutube"></ul>
     </section>
 
     <section class="card span-4">
-      <div class="card-head"><h2>WEBSITES</h2><span class="card-sub">heute im Browser</span></div>
+      <div class="card-head"><h2>Websites</h2><span class="card-sub">heute im Browser</span></div>
       <ul class="ranklist" id="listSites"></ul>
     </section>
   </main>
 
+  <!-- Scheibe: der Tag als 24-Stunden-Kreis wie auf der Scheibe eines
+       Fahrtenschreibers, daneben die Spuren der meistgenutzten Apps. -->
+  <main class="disc-view" id="viewDisc" hidden>
+    <div class="disc-sheet">
+      <section class="disc-left" aria-label="Der Tag als Scheibe">
+        <div class="disc-face">
+          <svg class="disc-svg" id="discSvg" viewBox="0 0 600 600" role="img" aria-label="24-Stunden-Scheibe, je Stunde die Minuten nach Kategorie">
+            <path class="disc-track" id="discTrack" />
+            <path class="disc-p" id="discP" />
+            <path class="disc-n" id="discN" />
+            <path class="disc-w" id="discW" />
+            <path class="disc-sel" id="discSel" />
+            <g id="discNeedle">
+              <line class="disc-needle" id="discNeedleLine" />
+              <circle class="disc-needle-tip" id="discNeedleTip" r="4" />
+            </g>
+            <g id="discLabels"></g>
+          </svg>
+          <div class="disc-center">
+            <span class="disc-score"><span id="discScore">0</span> %</span>
+            <span class="disc-score-label" id="discScoreLabel">Fokus heute</span>
+          </div>
+        </div>
+        <p class="disc-caption" id="discCaption"></p>
+      </section>
+
+      <section class="disc-right">
+        <div>
+          <h2 class="disc-title" id="discTitle">—</h2>
+          <p class="disc-subtitle" id="discSubtitle"></p>
+        </div>
+
+        <p class="disc-empty" id="discEmpty" hidden>Noch nichts erfasst.</p>
+
+        <div class="disc-body" id="discBody">
+          <div class="disc-milestones">
+            <p><i class="disc-dot disc-dot--p"></i><span id="discGoalLine"></span></p>
+            <p><i class="disc-dot disc-dot--w"></i><span id="discBudgetLine"></span></p>
+          </div>
+
+          <dl class="disc-totals">
+            <div><dt><i class="disc-swatch disc-swatch--p"></i>Produktiv</dt><dd id="discTotP">0 Min</dd></div>
+            <div><dt><i class="disc-swatch disc-swatch--n"></i>Neutral</dt><dd id="discTotN">0 Min</dd></div>
+            <div><dt><i class="disc-swatch disc-swatch--w"></i>Prokrastination</dt><dd id="discTotW">0 Min</dd></div>
+            <div><dt><i class="disc-swatch disc-swatch--all"></i>Am Mac</dt><dd id="discTotAll">0 Min</dd></div>
+          </dl>
+
+          <div class="lanes-block">
+            <div class="lanes-head">
+              <h3>Spuren</h3>
+              <span>Klick auf eine Stunde zeigt, was lief</span>
+            </div>
+            <p class="lanes-none" id="lanesNone" hidden>Für diesen Tag gibt es keine Spuren. Die App merkt sich erst seit dem Update, was in welcher Stunde lief.</p>
+            <div class="lanes">
+              <span></span>
+              <div class="lanes-ruler" id="lanesRuler"></div>
+              <div class="lanes-names" id="lanesNames"></div>
+              <div class="lanes-field">
+                <div class="lanes-rows" id="lanesRows"></div>
+                <div class="lanes-hits" id="lanesHits"></div>
+              </div>
+            </div>
+            <p class="lanes-more" id="lanesMore"></p>
+          </div>
+
+          <div class="disc-hour">
+            <div class="disc-hour-head">
+              <button type="button" class="disc-step" id="discPrev" aria-label="Stunde davor">‹</button>
+              <h3><span id="discHourLabel">—</span> <span class="disc-hour-total" id="discHourTotal"></span></h3>
+              <button type="button" class="disc-step" id="discNext" aria-label="Stunde danach">›</button>
+            </div>
+            <div class="disc-hour-list" id="discHourList"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
   <footer class="ticker">
-    <div class="ticker-track" id="tickerText">ALLE DATEN BLEIBEN LOKAL</div>
+    <div class="ticker-track" id="tickerText">Alle Daten bleiben lokal</div>
   </footer>
 
   <!-- Ziele-Dialog -->
   <div class="overlay" id="goalsOverlay" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="goalsTitle">
-      <div class="card-head"><h2 id="goalsTitle">ZIELE KALIBRIEREN</h2></div>
+      <div class="card-head"><h2 id="goalsTitle">Ziele kalibrieren</h2></div>
       <p class="modal-intro">
         Setz dir gute Werte: dein Produktiv-Ziel pro Tag und dein maximales
         Prokrastinations-Budget. Alles darunter wird live hochgerechnet.
       </p>
 
       <div class="presets">
-        <button class="preset" data-productive="120" data-waste="90">EINSTEIGER · 2 STD / 90 MIN</button>
-        <button class="preset" data-productive="240" data-waste="45">CREATOR · 4 STD / 45 MIN</button>
-        <button class="preset" data-productive="360" data-waste="20">MASCHINE · 6 STD / 20 MIN</button>
+        <button class="preset" data-productive="120" data-waste="90">Einsteiger · 2 Std / 90 Min</button>
+        <button class="preset" data-productive="240" data-waste="45">Creator · 4 Std / 45 Min</button>
+        <button class="preset" data-productive="360" data-waste="20">Maschine · 6 Std / 20 Min</button>
       </div>
 
       <div class="slider-row">
@@ -222,20 +311,20 @@
 
       <table class="proj-table">
         <thead>
-          <tr><th></th><th>PRODUKTIV-ZIEL</th><th>MAX. PROKRASTINATION</th></tr>
+          <tr><th></th><th>Produktiv-Ziel</th><th>Max. Prokrastination</th></tr>
         </thead>
         <tbody>
-          <tr><td>PRO WOCHE</td><td id="tWeekG">—</td><td class="is-wasted" id="tWeekW">—</td></tr>
-          <tr><td>PRO MONAT</td><td id="tMonthG">—</td><td class="is-wasted" id="tMonthW">—</td></tr>
-          <tr><td>PRO JAHR</td><td id="tYearG">—</td><td class="is-wasted" id="tYearW">—</td></tr>
+          <tr><td>Pro Woche</td><td id="tWeekG">—</td><td class="is-wasted" id="tWeekW">—</td></tr>
+          <tr><td>Pro Monat</td><td id="tMonthG">—</td><td class="is-wasted" id="tMonthW">—</td></tr>
+          <tr><td>Pro Jahr</td><td id="tYearG">—</td><td class="is-wasted" id="tYearW">—</td></tr>
         </tbody>
       </table>
 
       <p class="card-note" id="goalsNote"></p>
 
       <div class="modal-actions">
-        <button class="btn" id="goalsCancel">ABBRECHEN</button>
-        <button class="btn btn-accent" id="goalsSave">SPEICHERN</button>
+        <button class="btn" id="goalsCancel">Abbrechen</button>
+        <button class="btn btn-accent" id="goalsSave">Speichern</button>
       </div>
     </div>
   </div>
@@ -246,12 +335,20 @@
   <!-- Einstufungs-Menü -->
   <div class="ctx" id="ctxMenu" hidden>
     <p class="ctx-title" id="ctxTitle">Wie zählt das?</p>
-    <button data-cat="productive"><i class="dot dot-productive"></i>PRODUKTIV</button>
-    <button data-cat="neutral"><i class="dot dot-neutral"></i>NEUTRAL</button>
-    <button data-cat="wasted"><i class="dot dot-wasted"></i>ZEITVERSCHWENDUNG</button>
-    <button data-cat="auto" class="ctx-auto">AUTOMATISCH EINSTUFEN</button>
+    <button data-cat="productive"><i class="dot dot-productive"></i>Produktiv</button>
+    <button data-cat="neutral"><i class="dot dot-neutral"></i>Neutral</button>
+    <button data-cat="wasted"><i class="dot dot-wasted"></i>Zeitverschwendung</button>
+    <button data-cat="auto" class="ctx-auto">Automatisch einstufen</button>
   </div>
 
+  <!-- Design-Auswahl -->
+  <div class="ctx theme-menu" id="themeMenu" role="menu" aria-label="Design" hidden>
+    <p class="ctx-title">Design</p>
+    <button role="menuitemradio" data-theme="jarvis" aria-checked="true"><span class="swatches swatches--jarvis" aria-hidden="true"><i></i><i></i><i></i></span>JARVIS</button>
+    <button role="menuitemradio" data-theme="mischpult" aria-checked="false"><span class="swatches swatches--mischpult" aria-hidden="true"><i></i><i></i><i></i></span>Mischpult</button>
+  </div>
+
+  <script src="disc-geometry.js"></script>
   <script src="dashboard.js"></script>
 </body>
 </html>

@@ -14,7 +14,7 @@ const { focusScore } = require('./score');
  *   overrides: { "app:final cut pro": "productive", "domain:youtube.com": "wasted" }
  *   goals:     { productiveMinutes, maxWasteMinutes }
  *   settings:  { notifications, nudgeMinutes, tracking, idleThresholdSeconds,
- *                trayScore }
+ *                trayScore, theme, view }
  */
 
 const DEFAULT_GOALS = { productiveMinutes: 180, maxWasteMinutes: 60 };
@@ -26,6 +26,18 @@ const DEFAULT_SETTINGS = {
   idleThresholdSeconds: 60,
   // Score und Trendpfeil neben dem Menueleisten-Icon.
   trayScore: true,
+  theme: 'jarvis',
+  // Ansicht des Dashboards: 'overview' (Karten) oder 'disc' (Scheibe).
+  view: 'overview',
+};
+
+const VIEWS = ['overview', 'disc'];
+
+/** Die Designs zur Auswahl, mit der Fensterfarbe, die vor dem ersten
+    Zeichnen sichtbar ist (sonst blitzt beim Öffnen das falsche Theme auf). */
+const THEMES = {
+  jarvis: { label: 'JARVIS', background: '#050d11' },
+  mischpult: { label: 'Mischpult', background: '#141312' },
 };
 
 function defaultRecords() {
@@ -62,6 +74,9 @@ function emptyDay() {
     // Ab welcher Uhrzeit dieser Tag läuft. Tage von vor der 4-Uhr-Umstellung
     // haben das Feld nicht und liefen von 0 bis 24 Uhr.
     dayStart: DAY_START_HOUR,
+    // Wann heute das Produktiv-Ziel erreicht (goalAt) und das Budget
+    // aufgebraucht war (budgetAt), als Zeitstempel in ms.
+    milestones: {},
   };
 }
 
@@ -126,6 +141,7 @@ class Store {
         day.youtube = day.youtube || {};
         day.apps = day.apps || {};
         day.domains = day.domains || {};
+        day.milestones = day.milestones || {};
       }
     } catch {
       // Erster Start oder beschädigte Datei — mit Defaults weitermachen.
@@ -219,6 +235,8 @@ class Store {
       return;
     }
 
+    const before = { productive: day.productive, wasted: day.wasted };
+
     // "total" ist die Zeit aktiv am Rechner — Inaktivität zählt bewusst nicht mit.
     day.total += seconds;
     if (category === 'productive') { day.productive += seconds; bucket.p += seconds; }
@@ -247,6 +265,8 @@ class Store {
       rec.sec += seconds;
       rec.cat = category;
     }
+    this.checkMilestones(day, before);
+
     if (ctx.youtube && ctx.youtube.id) {
       const rec = day.youtube[ctx.youtube.id] || (day.youtube[ctx.youtube.id] = { sec: 0, title: '' });
       rec.sec += seconds;
@@ -255,6 +275,25 @@ class Store {
 
     this.checkRecords();
     this.save();
+  }
+
+  /**
+   * Merkt sich den Zeitpunkt, an dem das Ziel bzw. das Budget erreicht wurde —
+   * nur im Tick, der die Schwelle überschreitet. Wird ein Meilenstein gelöscht
+   * (neues Ziel, Umstufung), während die Schwelle schon überschritten ist,
+   * bleibt er leer: Dann weiß man, dass, aber nicht wann. Das ist ehrlicher als
+   * ein Zeitpunkt, der nur dem nächsten Tick entspricht.
+   */
+  checkMilestones(day, before) {
+    const ms = day.milestones || (day.milestones = {});
+    const goal = this.data.goals.productiveMinutes * 60;
+    const budget = this.data.goals.maxWasteMinutes * 60;
+    if (!ms.goalAt && goal > 0 && before.productive < goal && day.productive >= goal) {
+      ms.goalAt = Date.now();
+    }
+    if (!ms.budgetAt && budget > 0 && before.wasted < budget && day.wasted >= budget) {
+      ms.budgetAt = Date.now();
+    }
   }
 
   /**
@@ -322,7 +361,8 @@ class Store {
     const bucketName = kind === 'domain' ? 'domains' : 'apps';
 
     for (const day of Object.values(this.data.days)) {
-      reclassifyHours(day, kind, wanted, category, this.data.overrides);
+      // Verschobene Minuten machen die gemerkten Zeitpunkte falsch.
+      if (reclassifyHours(day, kind, wanted, category, this.data.overrides)) day.milestones = {};
 
       const bucket = day[bucketName];
       if (!bucket) continue;
@@ -342,16 +382,25 @@ class Store {
       day[rec.cat] -= rec.sec;
       day[targetCat] += rec.sec;
       rec.cat = targetCat;
+      day.milestones = {};
     }
   }
 
   setGoals(goals) {
-    this.data.goals = { ...this.data.goals, ...goals };
+    const prev = this.data.goals;
+    this.data.goals = { ...prev, ...goals };
+    // Mit einem anderen Ziel stimmt der alte Zeitpunkt nicht mehr.
+    const ms = this.day().milestones;
+    if (this.data.goals.productiveMinutes !== prev.productiveMinutes) delete ms.goalAt;
+    if (this.data.goals.maxWasteMinutes !== prev.maxWasteMinutes) delete ms.budgetAt;
     this.flush();
   }
 
   setSettings(settings) {
-    this.data.settings = { ...this.data.settings, ...settings };
+    const next = { ...settings };
+    if ('theme' in next && !THEMES[next.theme]) delete next.theme;
+    if ('view' in next && !VIEWS.includes(next.view)) delete next.view;
+    this.data.settings = { ...this.data.settings, ...next };
     this.flush();
   }
 
@@ -400,8 +449,10 @@ function mergeDay(into, from) {
 const HOUR_FIELD = { productive: 'p', neutral: 'n', wasted: 'w' };
 
 /** Teil von Store.reclassify(): verschiebt die Zeit eines Eintrags in jeder
-    Stunde, in der er vorkommt, in die neue Kategorie. */
+    Stunde, in der er vorkommt, in die neue Kategorie. Gibt zurück, ob sich
+    etwas geändert hat. */
 function reclassifyHours(day, kind, wanted, category, overrides) {
+  let changed = false;
   for (const hour of day.hours || []) {
     if (!hour.items) continue;
     for (const [itemKey, rec] of Object.entries(hour.items)) {
@@ -417,8 +468,10 @@ function reclassifyHours(day, kind, wanted, category, overrides) {
       hour[HOUR_FIELD[rec.cat]] -= rec.sec;
       hour[HOUR_FIELD[targetCat]] += rec.sec;
       rec.cat = targetCat;
+      changed = true;
     }
   }
+  return changed;
 }
 
 /** Kehrt dayKey() um: "2026-08-06" → lokales Date-Objekt um Mitternacht. */
@@ -428,5 +481,5 @@ function parseDayKey(key) {
 }
 
 module.exports = {
-  Store, dayKey, parseDayKey, emptyDay, DAY_START_HOUR, DEFAULT_GOALS, DEFAULT_SETTINGS,
+  Store, dayKey, parseDayKey, emptyDay, DAY_START_HOUR, DEFAULT_GOALS, DEFAULT_SETTINGS, THEMES,
 };
