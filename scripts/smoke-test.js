@@ -703,6 +703,15 @@ check('Geometrie: ein Klick in die Scheibe trifft die richtige Stunde', () => {
   assert.strictEqual(Disc.hourAtPoint(300, 10, 4), null, 'außerhalb trifft nichts');
 });
 
+check('Dock-Icon: standardmäßig aus, die Wahl übersteht einen Neustart', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+  const s = new Store(dir);
+  assert.strictEqual(s.data.settings.dockIcon, false);
+  s.setSettings({ dockIcon: true });
+  assert.strictEqual(new Store(dir).data.settings.dockIcon, true);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 check('Ansicht: Standard ist die Übersicht, nur bekannte Ansichten werden gespeichert', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
   const s = new Store(dir);

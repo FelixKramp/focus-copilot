@@ -28,6 +28,9 @@ let quitting = false;
 /* ------------------------------------------------------------------ Fenster */
 
 function createMainWindow() {
+  // Ohne Dock-Icon ist die App nie "aktiv", solange man nicht hinklickt —
+  // ohne das Vorholen ginge das Dashboard hinter dem gerade offenen Fenster auf.
+  if (process.platform === 'darwin') app.focus({ steal: true });
   if (mainWindow) {
     mainWindow.show();
     mainWindow.focus();
@@ -234,6 +237,17 @@ function trayContextMenu() {
       },
     },
     {
+      label: 'Icon im Dock zeigen',
+      type: 'checkbox',
+      checked: !!store.data.settings.dockIcon,
+      click: () => {
+        store.setSettings({ dockIcon: !store.data.settings.dockIcon });
+        applyDockIcon();
+        // Beim Wechsel der Richtlinie rutscht ein offenes Dashboard sonst nach hinten.
+        if (mainWindow && mainWindow.isVisible()) createMainWindow();
+      },
+    },
+    {
       label: 'Design',
       submenu: Object.entries(THEMES).map(([id, theme]) => ({
         label: theme.label,
@@ -245,6 +259,26 @@ function trayContextMenu() {
     { type: 'separator' },
     { label: 'Focus Co-Pilot beenden', click: () => { quitting = true; app.quit(); } },
   ]);
+}
+
+/**
+ * Dock-Icon ein- oder ausblenden. Ohne Icon ist Focus Co-Pilot eine reine
+ * Menüleisten-App wie WhisperBar: kein Dock, kein Cmd-Tab, das Dashboard geht
+ * über das Menüleisten-Icon auf.
+ *
+ * Die Richtlinie wird zur Laufzeit gesetzt statt über LSUIElement in der
+ * Info.plist: Als gepackte, unsignierte App landete sie ohne expliziten
+ * Aufruf manchmal im falschen Zustand, und so bleibt es eine Einstellung.
+ */
+function applyDockIcon() {
+  if (process.platform !== 'darwin' || !app.dock) return;
+  if (store.data.settings.dockIcon) {
+    app.setActivationPolicy('regular');
+    app.dock.show().catch(() => {});
+  } else {
+    app.setActivationPolicy('accessory');
+    app.dock.hide();
+  }
 }
 
 /** Design wechseln — aus dem Menüleisten-Menü oder aus dem Dashboard. */
@@ -401,15 +435,8 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', () => createMainWindow());
 
   app.whenReady().then(() => {
-    // Als gepackte, unsignierte App landet sie ohne diesen expliziten Aufruf
-    // manchmal ohne Dock-Icon und ohne Cmd-Tab-Eintrag — kein Info.plist-Schlüssel
-    // verursacht das, es hilft nur, die Richtlinie hier aktiv zu setzen.
-    if (process.platform === 'darwin' && app.dock) {
-      app.setActivationPolicy('regular');
-      app.dock.show().catch(() => {});
-    }
-
     store = new Store(app.getPath('userData'));
+    applyDockIcon();
     tracker = new Tracker(store);
 
     registerIpc();
