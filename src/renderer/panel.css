@@ -396,3 +396,42 @@ body {
   --disc-track: #232a32;
   --disc-face: #181d22;
 }
+
+/* Mischpult hell: das Pult bei Tageslicht. */
+:root[data-theme="mischpult-hell"] {
+  --cyan: #c98a0b;
+  --green: #3d8b1e;
+  --green-deep: #3d8b1e;
+  --red: #e3330c;
+  --idle: #7d776e;
+  --text: #1c1b19;
+  --text-strong: #121110;
+  --heading: #1c1b19;
+  --muted: #57524b;
+  --muted-dim: #6b665e;
+  --line: #d3d0ca;
+  --edge: #c4c0b9;
+  --edge-hover: #a8a39b;
+  --surface: #f2f1ee;
+  --surface-glow: none;
+  --shadow: 0 18px 40px rgba(30, 28, 25, 0.22);
+  --track: #dcd9d3;
+  --bar-track: #dcd9d3;
+  --bar-fill: var(--green);
+  --button-bg: #f5f5f4;
+  --quit-hover-bg: #f6ddd3;
+  --quit-hover-edge: #e2a690;
+  --pill-productive: #2f6f15;  --pill-productive-bg: #e1efd6;
+  --pill-neutral: #4c4842;     --pill-neutral-bg: #e2dfda;
+  --pill-wasted: #a83416;      --pill-wasted-bg: #f6ddd3;
+  --pill-idle-edge: #cfcbc4;
+  --disc-n: #8f8a82;
+  --disc-track: #dcd9d3;
+  --disc-face: #e9e7e3;
+  --mono: "DIN Condensed", ui-monospace, Menlo, monospace;
+  --glow-ring: none;
+  --glow-pulse: none;
+  --glow-text-productive: none;
+  --glow-text-wasted: none;
+  --glow-bar: none;
+}

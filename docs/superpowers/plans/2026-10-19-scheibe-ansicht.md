@@ -107,6 +107,8 @@ Offen: ein paar Tage benutzen, dann entscheiden, ob die Scheibe Startansicht wir
 
 **Nachtrag 19.10. (Branch `designs-hell-dunkel`):** Design und Ansicht sind jetzt unabhängig. Fünf Designs (JARVIS, JARVIS hell, Mischpult, Tacho, Tacho dunkel) färben Übersicht, Scheibe, Kopfzeile und Menüleisten-Fenster. „Tacho" ist die Palette der Scheibe als eigenes Design, das Orange ist dabei satter geworden (#ee5a0b). In der Ansicht „Scheibe" zeigt das Menüleisten-Fenster eine Mini-Scheibe statt des Rings; das Fenster ist dafür 404 statt 392 px hoch.
 
+**Nachtrag 2 (Branch `mischpult-hell-und-system`):** Gewählt werden jetzt Design (JARVIS, Mischpult, Tacho) und Darstellung (wie das System, hell, dunkel) getrennt; die Zuordnung steht in `src/renderer/themes.js`, das Main, Dashboard und Menüleisten-Fenster teilen. Neu ist Mischpult hell. Alte Einstellungen werden beim Laden so umgerechnet, dass dasselbe Design zu sehen bleibt. Das Spurband ist ein Punktraster: je Stunde ein Punkt, Fläche ∝ Minuten. Testdaten für die Vorschau: `node scripts/make-fake.js <ordner>`; die Vorschau kann `--mode` und `--system dark|light`.
+
 ## Offene Fragen (nicht in diesem Plan)
 
 - ~~Soll die Scheibe auch in JARVIS und Mischpult erscheinen?~~ Ja, seit dem Nachtrag.

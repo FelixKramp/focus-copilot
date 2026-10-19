@@ -13,7 +13,8 @@ const path = require('path');
 const {
   classify, domainFromUrl, youtubeIdFromUrl, isIgnoredProcess,
 } = require('../src/main/classify');
-const { Store, dayKey, emptyDay, DAY_START_HOUR, THEMES } = require('../src/main/store');
+const { Store, dayKey, emptyDay, DAY_START_HOUR } = require('../src/main/store');
+const Themes = require('../src/renderer/themes');
 const { buildSnapshot, focusScore, appLanes } = require('../src/main/stats');
 const Disc = require('../src/renderer/disc-geometry');
 const { scoreTrend } = require('../src/main/score');
@@ -588,15 +589,42 @@ check('Design: Standard ist JARVIS, nur bekannte Designs werden gespeichert', ()
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
-check('Design: alle fünf Varianten lassen sich wählen und haben eine Fensterfarbe', () => {
+check('Design und Modus: drei Designs, je hell und dunkel, dazu „wie das System“', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
   const s = new Store(dir);
-  for (const id of ['jarvis', 'jarvis-hell', 'mischpult', 'tacho', 'tacho-dunkel']) {
+  assert.strictEqual(s.data.settings.mode, 'system', 'neu: folgt dem System');
+  for (const id of ['jarvis', 'mischpult', 'tacho']) {
     s.setSettings({ theme: id });
     assert.strictEqual(s.data.settings.theme, id);
-    assert.match(THEMES[id].background, /^#[0-9a-f]{6}$/);
+    for (const dark of [true, false]) {
+      assert.match(Themes.variant(id, 'system', dark).background, /^#[0-9a-f]{6}$/);
+    }
   }
+  s.setSettings({ mode: 'dark' });
+  s.setSettings({ mode: 'kaputt', theme: 'jarvis-hell' });
+  assert.strictEqual(s.data.settings.mode, 'dark', 'unbekannter Modus wird ignoriert');
+  assert.strictEqual(s.data.settings.theme, 'tacho', 'Varianten sind keine Designs mehr');
+  assert.strictEqual(Themes.variant('mischpult', 'light', true).id, 'mischpult-hell', 'hell schlägt System');
+  assert.strictEqual(Themes.variant('mischpult', 'system', true).id, 'mischpult');
+  assert.strictEqual(Themes.variant('tacho', 'system', false).id, 'tacho');
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+check('Design und Modus: alte Einstellungen behalten ihr Aussehen', () => {
+  const cases = [
+    ['jarvis', 'jarvis', 'dark'],
+    ['jarvis-hell', 'jarvis', 'light'],
+    ['mischpult', 'mischpult', 'dark'],
+    ['tacho', 'tacho', 'light'],
+    ['tacho-dunkel', 'tacho', 'dark'],
+  ];
+  for (const [saved, theme, mode] of cases) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcp-test-'));
+    fs.writeFileSync(path.join(dir, 'data.json'), JSON.stringify({ settings: { theme: saved } }));
+    const s = new Store(dir);
+    assert.deepStrictEqual([s.data.settings.theme, s.data.settings.mode], [theme, mode], saved);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 check('Geometrie: die Mini-Scheibe nutzt eigene Radien', () => {

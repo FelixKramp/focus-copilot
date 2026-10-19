@@ -178,8 +178,17 @@
 
 .lanes-field { position: relative; display: flex; flex-direction: column; }
 .lanes-row { height: 26px; display: flex; align-items: center; border-bottom: 1px solid var(--d-lane-line); }
-.lanes-cell { flex: 1; min-width: 0; height: 12px; padding-right: 1px; display: flex; }
-.lanes-cell i { height: 100%; border-radius: 2px; }
+/* Punkt je Stunde, Fläche ∝ Minuten (--s ist die Wurzel des Stundenanteils).
+   Eine volle Stunde füllt die Zelle fast; weniger als fünf Minuten bleiben
+   ein kleiner, aber klar gesetzter Punkt. */
+.lanes-cell { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; justify-content: center; }
+.lanes-cell i {
+  --dot-max: 15px;
+  width: max(4px, calc(var(--s) * var(--dot-max)));
+  aspect-ratio: 1;
+  border-radius: 50%;
+  flex: none;
+}
 .lanes-none { font-size: 13px; color: var(--d-grey); text-wrap: pretty; }
 .lanes-none[hidden] { display: none; }
 
@@ -337,8 +346,28 @@
   --d-sheet-edge: #2f2d2a;
   --d-num: "DIN Condensed", ui-monospace, monospace;
 }
-[data-theme="mischpult"] .disc-sheet { border-radius: 4px; }
-[data-theme="mischpult"] .disc-score { font-weight: 700; }
+[data-theme="mischpult-hell"] #viewDisc {
+  --d-ground: #f2f1ee;
+  --d-surface: #e9e7e3;
+  --d-ink: #1c1b19;
+  --d-grey: #57524b;
+  --d-productive: #3d8b1e;
+  --d-neutral: #8f8a82;
+  --d-wasted: #e3330c;
+  --d-track: #dcd9d3;
+  --d-line: #d3d0ca;
+  --d-lane-line: #dedbd5;
+  --d-control-edge: #b5b0a8;
+  --d-hover: #dfdcd7;
+  --d-selected: rgba(201, 138, 11, 0.12);
+  --d-hit-hover: rgba(201, 138, 11, 0.07);
+  --d-sel: #c98a0b;
+  --d-focus: #c98a0b;
+  --d-sheet-edge: #d3d0ca;
+  --d-num: "DIN Condensed", ui-monospace, monospace;
+}
+[data-theme^="mischpult"] .disc-sheet { border-radius: 4px; }
+[data-theme^="mischpult"] .disc-score { font-weight: 700; }
 
 /* ------------------------------------------------------- Umschalter */
 
